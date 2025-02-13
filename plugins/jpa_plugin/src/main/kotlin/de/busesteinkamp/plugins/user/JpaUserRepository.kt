@@ -3,18 +3,23 @@ package de.busesteinkamp.plugins.user
 import de.busesteinkamp.domain.user.User
 import de.busesteinkamp.domain.user.UserRepository
 import jakarta.persistence.EntityManager
-import jakarta.persistence.PersistenceContext
+import jakarta.persistence.EntityManagerFactory
+import jakarta.persistence.Persistence
 import org.springframework.stereotype.Repository
 import java.util.*
 
 @Repository
 class JpaUserRepository : UserRepository {
 
-    @PersistenceContext
     private lateinit var entityManager: EntityManager
+    private var entityManagerFactory: EntityManagerFactory = Persistence.createEntityManagerFactory("user-unit")
 
     override fun findById(id: UUID): User? {
         return entityManager.find(User::class.java, id)
+    }
+
+    init {
+        entityManager = entityManagerFactory.createEntityManager()
     }
 
     override fun save(user: User): User {

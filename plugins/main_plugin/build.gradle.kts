@@ -15,8 +15,7 @@ dependencies {
     implementation(project(":adapters"))
     implementation(project(":application"))
     implementation(project(":domain"))
-    implementation(project(":plugins:jpa_plugin"))
-    implementation("org.springframework.boot:spring-boot-starter-web:3.4.1") // Spring Web MVC
+    implementation(project(":plugins:inmemory_plugin"))
 }
 
 tasks.test {

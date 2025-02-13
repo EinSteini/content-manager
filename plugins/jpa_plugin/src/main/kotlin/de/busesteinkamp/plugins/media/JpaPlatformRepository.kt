@@ -3,6 +3,8 @@ package de.busesteinkamp.plugins.media
 import de.busesteinkamp.domain.media.Platform
 import de.busesteinkamp.domain.media.PlatformRepository
 import jakarta.persistence.EntityManager
+import jakarta.persistence.EntityManagerFactory
+import jakarta.persistence.Persistence
 import jakarta.persistence.PersistenceContext
 import org.springframework.stereotype.Repository
 import java.util.*
@@ -10,8 +12,12 @@ import java.util.*
 @Repository
 class JpaPlatformRepository : PlatformRepository {
 
-    @PersistenceContext
     private lateinit var entityManager: EntityManager
+    private var entityManagerFactory: EntityManagerFactory = Persistence.createEntityManagerFactory("platform-unit")
+
+    init {
+        entityManager = entityManagerFactory.createEntityManager()
+    }
 
     override fun findById(id: UUID): Platform? {
         return entityManager.find(Platform::class.java, id)

@@ -20,4 +20,8 @@ class MediaFile(
     enum class UploadStatus {
         PENDING, UPLOADED, FAILED
     }
+
+    override fun toString(): String {
+        return "MediaFile(id=$id, filename='$filename', filetype='$filetype', fileSize=$fileSize, uploadStatus=$uploadStatus)"
+    }
 }
