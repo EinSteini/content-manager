@@ -1,4 +1,4 @@
-package de.busesteinkamp.domain.media
+package de.busesteinkamp.domain.platform
 
 import java.util.UUID
 

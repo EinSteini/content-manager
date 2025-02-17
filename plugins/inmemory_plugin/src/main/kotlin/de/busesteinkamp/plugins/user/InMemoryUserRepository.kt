@@ -1,4 +1,4 @@
-package de.busesteinkamp.de.busesteinkamp.plugins.user
+package de.busesteinkamp.plugins.user
 
 import de.busesteinkamp.domain.user.User
 import de.busesteinkamp.domain.user.UserRepository

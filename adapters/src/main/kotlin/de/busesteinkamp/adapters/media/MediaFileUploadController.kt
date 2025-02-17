@@ -42,25 +42,25 @@ class MediaFileUploadController(
     }
 
     private fun handleUpload(exchange: HttpExchange) {
-        try {
-            val reader = BufferedReader(InputStreamReader(exchange.requestBody))
-            val jsonText = reader.readText()
-            val mediaFileDto = json.decodeFromString<MediaFileDto>(jsonText)
-            val mediaFile = MediaFile(
-                filename = mediaFileDto.filename,
-                filetype = mediaFileDto.filetype,
-                fileSize = mediaFileDto.fileSize
-            )
-            uploadMediaFileUseCase.execute(mediaFile, mediaFileDto.platformNames)
-            exchange.sendResponseHeaders(200, -1)
-        } catch (e: Exception) {
-            // Fehlerbehandlung
-            exchange.sendResponseHeaders(500, -1)
-            val output: OutputStream = exchange.responseBody
-            val response = e.message ?: "Interner Serverfehler"
-            output.write(response.toByteArray())
-            output.flush()
-        }
+//        try {
+//            val reader = BufferedReader(InputStreamReader(exchange.requestBody))
+//            val jsonText = reader.readText()
+//            val mediaFileDto = json.decodeFromString<MediaFileDto>(jsonText)
+//            val mediaFile = MediaFile(
+//                filename = mediaFileDto.filename,
+//                filetype = mediaFileDto.filetype,
+//                fileSize = mediaFileDto.fileSize
+//            )
+//            uploadMediaFileUseCase.execute(mediaFile, mediaFileDto.platformNames)
+//            exchange.sendResponseHeaders(200, -1)
+//        } catch (e: Exception) {
+//            // Fehlerbehandlung
+//            exchange.sendResponseHeaders(500, -1)
+//            val output: OutputStream = exchange.responseBody
+//            val response = e.message ?: "Interner Serverfehler"
+//            output.write(response.toByteArray())
+//            output.flush()
+//        }
     }
 
     private fun handleGet(exchange: HttpExchange) {

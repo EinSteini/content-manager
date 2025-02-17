@@ -4,12 +4,21 @@ import de.busesteinkamp.adapters.media.MediaFileUploadController
 import de.busesteinkamp.application.media.GetMediaFileUseCase
 import de.busesteinkamp.application.media.UploadMediaFileUseCase
 import de.busesteinkamp.plugins.media.InMemoryMediaFileRepository
-import de.busesteinkamp.de.busesteinkamp.plugins.media.InMemoryPlatformRepository
+import de.busesteinkamp.plugins.media.InMemoryPlatformRepository
 import de.busesteinkamp.domain.media.MediaFile
 import de.busesteinkamp.domain.media.MediaFileRepository
-import de.busesteinkamp.domain.media.PlatformRepository
+import de.busesteinkamp.domain.platform.Platform
+import de.busesteinkamp.domain.platform.PlatformRepository
+import de.busesteinkamp.domain.platform.PublishParameters
+import de.busesteinkamp.domain.process.UploadStatus
+import de.busesteinkamp.domain.user.User
+import de.busesteinkamp.domain.user.UserRepository
+import de.busesteinkamp.plugins.media.TxtFile
+import de.busesteinkamp.plugins.platform.ThreadsConnector
+import de.busesteinkamp.plugins.user.InMemoryUserRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import java.util.*
 
 open class Main
 
@@ -17,15 +26,26 @@ fun main(args: Array<String>): Unit = runBlocking {
     // Hier die Abhängigkeiten manuell erstellen und injizieren
     val mediaFileRepository: MediaFileRepository = InMemoryMediaFileRepository() // Verwende InMemoryMediaFileRepository
     val platformRepository: PlatformRepository = InMemoryPlatformRepository()
+    val userRepository: UserRepository = InMemoryUserRepository()
     val uploadMediaFileUseCase = UploadMediaFileUseCase(mediaFileRepository, platformRepository)
     val getMediaFileUseCase = GetMediaFileUseCase(mediaFileRepository)
     val mediaFileUploadController = MediaFileUploadController(uploadMediaFileUseCase, getMediaFileUseCase)
     mediaFileUploadController.startServer(8080)
 
     // Beispielhafte Verwendung der Use Cases
-    val mediaFile = MediaFile(filename = "/Users/niklas/DEV/AdvSWEProjekt/content-manager/test.txt", filetype = "text/plain", fileSize = 1234)
+    val mediaFile: MediaFile = TxtFile(
+        filename = "/Users/niklas/DEV/AdvSWEProjekt/content-manager/test.txt", filetype = "text/plain", fileSize = 1234,
+        id = UUID.randomUUID(),
+        uploadStatus = UploadStatus.INITIAL
+    )
     println(mediaFile.toString())
-    uploadMediaFileUseCase.execute(mediaFile, listOf("YouTube", "Instagram"))
+
+    val threads: Platform = platformRepository.findByName("threads")!!
+    val mainUser: User = User(UUID.randomUUID(), "main", listOf(threads))
+    val publishParameters: PublishParameters = PublishParameters()
+    publishParameters.title = "New Post"
+
+    uploadMediaFileUseCase.execute(mediaFile, mainUser, publishParameters)
 
     delay(5000)
 

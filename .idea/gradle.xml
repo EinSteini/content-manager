@@ -18,6 +18,8 @@
             <option value="$PROJECT_DIR$/plugins/jpa_plugin" />
             <option value="$PROJECT_DIR$/plugins/json_plugin" />
             <option value="$PROJECT_DIR$/plugins/main_plugin" />
+            <option value="$PROJECT_DIR$/plugins/threads_plugin" />
+            <option value="$PROJECT_DIR$/plugins/txt_plugin" />
           </set>
         </option>
       </GradleProjectSettings>

@@ -1,27 +1,18 @@
 package de.busesteinkamp.domain.media
 
-import jakarta.persistence.Entity
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.Id
+import de.busesteinkamp.domain.process.UploadStatus
 import java.util.UUID
 
-@Entity
-class MediaFile(
-    @Id
-    @GeneratedValue
+abstract class MediaFile(
     var id: UUID? = UUID.randomUUID(),
     var filename: String,
     var filetype: String,
     var fileSize: Long,
-    var uploadStatus: UploadStatus = UploadStatus.PENDING
+    var uploadStatus: UploadStatus? = UploadStatus.INITIAL
 ) {
-    constructor() : this(null, "", "", 0, UploadStatus.PENDING)
-
-    enum class UploadStatus {
-        PENDING, UPLOADED, FAILED
-    }
-
     override fun toString(): String {
         return "MediaFile(id=$id, filename='$filename', filetype='$filetype', fileSize=$fileSize, uploadStatus=$uploadStatus)"
     }
+
+    abstract fun loadFile()
 }
