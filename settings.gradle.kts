@@ -17,3 +17,7 @@ include("plugins:json_plugin")
 include("plugins:main_plugin")
 include("plugins:inmemory_plugin")
 findProject(":plugins:inmemory_plugin")?.name = "inmemory_plugin"
+include("plugins:threads_plugin")
+findProject(":plugins:threads_plugin")?.name = "threads_plugin"
+include("plugins:txt_plugin")
+findProject(":plugins:txt_plugin")?.name = "txt_plugin"

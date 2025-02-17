@@ -1,7 +1,8 @@
-package de.busesteinkamp.de.busesteinkamp.plugins.media
+package de.busesteinkamp.plugins.media
 
-import de.busesteinkamp.domain.media.Platform
-import de.busesteinkamp.domain.media.PlatformRepository
+import de.busesteinkamp.domain.platform.Platform
+import de.busesteinkamp.domain.platform.PlatformRepository
+import de.busesteinkamp.plugins.platform.ThreadsConnector
 import java.util.UUID
 
 class InMemoryPlatformRepository : PlatformRepository {
@@ -10,8 +11,7 @@ class InMemoryPlatformRepository : PlatformRepository {
 
     init {
         // Füge hier deine Plattformen hinzu
-        platforms.add(Platform(UUID.randomUUID(), "YouTube", "https://www.youtube.com/"))
-        platforms.add(Platform(UUID.randomUUID(), "Instagram", "https://www.instagram.com/"))
+        platforms.add(ThreadsConnector(UUID.randomUUID(), "threads"))
         // ...
     }
 

@@ -1,16 +1,12 @@
 package de.busesteinkamp.domain.user
 
-import jakarta.persistence.Entity
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.Id
+import de.busesteinkamp.domain.platform.Platform
 import java.util.*
 
-@Entity
 class User(
-    @Id
-    @GeneratedValue
     var id: UUID? = null,
-    var name: String
+    var name: String,
+    var platforms: List<Platform> = emptyList(),
 ) {
     constructor() : this(null, "")
 }

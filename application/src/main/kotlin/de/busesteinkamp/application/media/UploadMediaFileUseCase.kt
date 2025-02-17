@@ -1,9 +1,11 @@
 package de.busesteinkamp.application.media
 
-import de.busesteinkamp.domain.media.MediaFile
-import de.busesteinkamp.domain.media.MediaFileRepository
-import de.busesteinkamp.domain.media.Platform
-import de.busesteinkamp.domain.media.PlatformRepository
+import de.busesteinkamp.domain.media.*
+import de.busesteinkamp.domain.platform.Platform
+import de.busesteinkamp.domain.platform.PlatformRepository
+import de.busesteinkamp.domain.platform.PublishParameters
+import de.busesteinkamp.domain.process.UploadStatus
+import de.busesteinkamp.domain.user.User
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -14,21 +16,21 @@ class UploadMediaFileUseCase(
     private val mediaFileRepository: MediaFileRepository,
     private val platformRepository: PlatformRepository
 ) {
-    fun execute(mediaFile: MediaFile, platformNames: List<String>) {
+    fun execute(mediaFile: MediaFile, user: User, publishParameters: PublishParameters) {
         CoroutineScope(Dispatchers.IO).launch {
             // 1. Datei speichern
             val savedMediaFile = mediaFileRepository.save(mediaFile)
 
             // 2. Plattformen abrufen
-            val platforms = platformNames.mapNotNull { platformRepository.findByName(it) }
+            val platforms = user.platforms
 
             // 3. Datei auf jede Plattform hochladen
             platforms.forEach { platform ->
                 try {
                     uploadToPlatform(savedMediaFile, platform)
-                    savedMediaFile.uploadStatus = MediaFile.UploadStatus.UPLOADED
+                    savedMediaFile.uploadStatus = UploadStatus.FINISHED
                 } catch (e: Exception) {
-                    savedMediaFile.uploadStatus = MediaFile.UploadStatus.FAILED
+                    savedMediaFile.uploadStatus = UploadStatus.FAILED
                     // ... Fehlerbehandlung (Logging, etc.)
                 } finally {
                     mediaFileRepository.update(savedMediaFile)

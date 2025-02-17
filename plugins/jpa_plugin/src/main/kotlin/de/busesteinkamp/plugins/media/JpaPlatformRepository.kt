@@ -1,11 +1,10 @@
 package de.busesteinkamp.plugins.media
 
-import de.busesteinkamp.domain.media.Platform
-import de.busesteinkamp.domain.media.PlatformRepository
+import de.busesteinkamp.domain.platform.Platform
+import de.busesteinkamp.domain.platform.PlatformRepository
 import jakarta.persistence.EntityManager
 import jakarta.persistence.EntityManagerFactory
 import jakarta.persistence.Persistence
-import jakarta.persistence.PersistenceContext
 import org.springframework.stereotype.Repository
 import java.util.*
 
