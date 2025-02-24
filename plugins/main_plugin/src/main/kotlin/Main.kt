@@ -11,10 +11,12 @@ import de.busesteinkamp.domain.platform.Platform
 import de.busesteinkamp.domain.platform.PlatformRepository
 import de.busesteinkamp.domain.platform.PublishParameters
 import de.busesteinkamp.domain.process.UploadStatus
+import de.busesteinkamp.domain.server.Server
 import de.busesteinkamp.domain.user.User
 import de.busesteinkamp.domain.user.UserRepository
 import de.busesteinkamp.plugins.media.TxtFile
-import de.busesteinkamp.plugins.platform.ThreadsConnector
+import de.busesteinkamp.plugins.platform.ThreadsPlatform
+import de.busesteinkamp.plugins.server.KtorServer
 import de.busesteinkamp.plugins.user.InMemoryUserRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -29,8 +31,7 @@ fun main(args: Array<String>): Unit = runBlocking {
     val userRepository: UserRepository = InMemoryUserRepository()
     val uploadMediaFileUseCase = UploadMediaFileUseCase(mediaFileRepository, platformRepository)
     val getMediaFileUseCase = GetMediaFileUseCase(mediaFileRepository)
-    val mediaFileUploadController = MediaFileUploadController(uploadMediaFileUseCase, getMediaFileUseCase)
-    mediaFileUploadController.startServer(8080)
+    val server: Server = KtorServer(8080);
 
     // Beispielhafte Verwendung der Use Cases
     val mediaFile: MediaFile = TxtFile(
@@ -40,15 +41,19 @@ fun main(args: Array<String>): Unit = runBlocking {
     )
     println(mediaFile.toString())
 
-    val threads: Platform = platformRepository.findByName("threads")!!
+    val threads: Platform = ThreadsPlatform(UUID.randomUUID(), "Threads", server)
+    platformRepository.save(threads)
     val mainUser: User = User(UUID.randomUUID(), "main", listOf(threads))
     val publishParameters: PublishParameters = PublishParameters()
     publishParameters.title = "New Post"
 
+    server.start()
     uploadMediaFileUseCase.execute(mediaFile, mainUser, publishParameters)
 
     delay(5000)
 
     val uploadedFile = getMediaFileUseCase.execute(mediaFile.id!!)
     println(uploadedFile)
+
+    Scanner(System.`in`).nextLine()
 }
