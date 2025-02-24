@@ -19,6 +19,9 @@ dependencies {
     implementation("com.h2database:h2:2.2.224") // H2 Datenbank
     implementation("jakarta.persistence:jakarta.persistence-api:3.1.0") // JPA API
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
+    implementation("io.ktor:ktor-server-core:3.1.0")
+    implementation("io.ktor:ktor-server-netty:3.1.0")
+    implementation("io.ktor:ktor-server-call-logging:3.1.0")
 }
 
 tasks.test {

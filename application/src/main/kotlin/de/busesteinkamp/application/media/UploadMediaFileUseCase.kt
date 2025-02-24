@@ -9,9 +9,7 @@ import de.busesteinkamp.domain.user.User
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import org.springframework.stereotype.Component
 
-@Component
 class UploadMediaFileUseCase(
     private val mediaFileRepository: MediaFileRepository,
     private val platformRepository: PlatformRepository

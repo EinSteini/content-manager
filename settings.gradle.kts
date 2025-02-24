@@ -21,3 +21,7 @@ include("plugins:threads_plugin")
 findProject(":plugins:threads_plugin")?.name = "threads_plugin"
 include("plugins:txt_plugin")
 findProject(":plugins:txt_plugin")?.name = "txt_plugin"
+include("plugins:ktor_server_plugin")
+findProject(":plugins:ktor_server_plugin")?.name = "ktor_server_plugin"
+include("plugins:ktor_server_plugin")
+findProject(":plugins:ktor_server_plugin")?.name = "ktor_server_plugin"

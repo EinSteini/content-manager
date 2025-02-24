@@ -6,4 +6,5 @@ interface PlatformRepository {
     fun findById(id: UUID): Platform?
     fun findByName(name: String): Platform?
     fun findAll(): List<Platform>
+    fun save(platform: Platform): Platform
 }
