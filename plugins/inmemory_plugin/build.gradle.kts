@@ -12,7 +12,6 @@ repositories {
 dependencies {
     testImplementation(kotlin("test"))
     implementation(project(":domain"))
-    implementation(project(":plugins:threads_plugin"))
 }
 
 tasks.test {

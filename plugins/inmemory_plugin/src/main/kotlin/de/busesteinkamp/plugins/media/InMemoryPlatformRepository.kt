@@ -2,7 +2,6 @@ package de.busesteinkamp.plugins.media
 
 import de.busesteinkamp.domain.platform.Platform
 import de.busesteinkamp.domain.platform.PlatformRepository
-import de.busesteinkamp.plugins.platform.ThreadsPlatform
 import java.util.UUID
 
 class InMemoryPlatformRepository : PlatformRepository {

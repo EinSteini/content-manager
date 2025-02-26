@@ -1,8 +1,8 @@
 package de.busesteinkamp
 
-import de.busesteinkamp.adapters.media.MediaFileUploadController
 import de.busesteinkamp.application.media.GetMediaFileUseCase
 import de.busesteinkamp.application.media.UploadMediaFileUseCase
+import de.busesteinkamp.domain.auth.AuthKeyRepository
 import de.busesteinkamp.plugins.media.InMemoryMediaFileRepository
 import de.busesteinkamp.plugins.media.InMemoryPlatformRepository
 import de.busesteinkamp.domain.media.MediaFile
@@ -14,6 +14,7 @@ import de.busesteinkamp.domain.process.UploadStatus
 import de.busesteinkamp.domain.server.Server
 import de.busesteinkamp.domain.user.User
 import de.busesteinkamp.domain.user.UserRepository
+import de.busesteinkamp.plugins.auth.SqliteAuthKeyRepository
 import de.busesteinkamp.plugins.media.TxtFile
 import de.busesteinkamp.plugins.platform.ThreadsPlatform
 import de.busesteinkamp.plugins.server.KtorServer
@@ -31,7 +32,8 @@ fun main(args: Array<String>): Unit = runBlocking {
     val userRepository: UserRepository = InMemoryUserRepository()
     val uploadMediaFileUseCase = UploadMediaFileUseCase(mediaFileRepository, platformRepository)
     val getMediaFileUseCase = GetMediaFileUseCase(mediaFileRepository)
-    val server: Server = KtorServer(8080);
+    val server: Server = KtorServer(8443)
+    val authKeyRepository: AuthKeyRepository = SqliteAuthKeyRepository()
 
     // Beispielhafte Verwendung der Use Cases
     val mediaFile: MediaFile = TxtFile(
@@ -41,9 +43,10 @@ fun main(args: Array<String>): Unit = runBlocking {
     )
     println(mediaFile.toString())
 
-    val threads: Platform = ThreadsPlatform(UUID.randomUUID(), "Threads", server)
-    platformRepository.save(threads)
+    val userId = UUID.randomUUID()
+    val threads: Platform = ThreadsPlatform(UUID.randomUUID(), "Threads", server, authKeyRepository)
     val mainUser: User = User(UUID.randomUUID(), "main", listOf(threads))
+    platformRepository.save(threads)
     val publishParameters: PublishParameters = PublishParameters()
     publishParameters.title = "New Post"
 
