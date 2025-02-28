@@ -6,9 +6,8 @@ import de.busesteinkamp.domain.media.MediaFile
 import de.busesteinkamp.domain.platform.Platform
 import de.busesteinkamp.domain.platform.PublishParameters
 import de.busesteinkamp.domain.server.Server
-import de.busesteinkamp.plugins.server.ThreadsLongLivedAccessTokenResponse
+import de.busesteinkamp.plugins.media.TxtFile
 import de.busesteinkamp.plugins.server.ThreadsServerPlugin
-import de.busesteinkamp.plugins.server.ThreadsShortLivedAccessTokenResponse
 import io.github.cdimascio.dotenv.dotenv
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -20,7 +19,9 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.awt.Desktop
 import java.net.URI
@@ -61,11 +62,58 @@ class ThreadsPlatform(id: UUID?, name: String, private val server: Server, priva
         }
     }
 
+    @Serializable
+    private data class MediaContainerResponse(val id: String)
+
+    @Serializable
+    data class LongLivedAccessTokenResponse(val access_token: String, val token_type: String, val expires_in: Int)
+
+    @Serializable
+    data class ShortLivedAccessTokenResponse(val access_token: String, val user_id: String)
+
     override fun upload(mediaFile: MediaFile, publishParameters: PublishParameters) {
-        if(!authorized){
+        if(!authorized || apiKey == ""){
             throw IllegalStateException("Platform is not authorized")
         }
-        TODO("Not yet implemented")
+        CoroutineScope(Dispatchers.IO).launch {
+            when(mediaFile.filetype){
+                "text/plain" -> uploadText(mediaFile)
+                else -> {
+                    throw IllegalArgumentException("Unsupported media type")
+                }
+            }
+        }
+    }
+
+    private suspend fun uploadText(mediaFile: MediaFile){
+        println("Uploading text file to Threads")
+        val textFile = mediaFile as TxtFile
+        textFile.loadFile()
+
+        var response = client.post("https://graph.threads.net/v1.0/me/threads"){
+            parameter("media_type", "TEXT")
+            parameter("text", textFile.textContent)
+            parameter("access_token", apiKey)
+        }
+        if(response.status != HttpStatusCode.OK){
+            throw IllegalStateException("Error uploading text file to Threads. Server responded with status ${response.status}")
+        }
+        val mediaContainerResponse: MediaContainerResponse = response.body()
+
+        println("Uploaded text file to Threads. Media container ID: ${mediaContainerResponse.id}")
+
+        // delay for 30 seconds to give Threads time to process the media
+        // (documentation says it can take up to 30 seconds)
+        delay(30 * 1000)
+
+        response = client.post("https://graph.threads.net/v1.0/me/threads_publish"){
+            parameter("creation_id", mediaContainerResponse.id)
+            parameter("access_token", apiKey)
+        }
+        if(response.status != HttpStatusCode.OK){
+            throw IllegalStateException("Error publishing text file to Threads. Server responded with status ${response.status}")
+        }
+        println("Published text file to Threads")
     }
 
     private suspend fun testKey(key: AuthKey?){
@@ -127,7 +175,7 @@ class ThreadsPlatform(id: UUID?, name: String, private val server: Server, priva
             }))
         }
 
-        val accessTokenResponse: ThreadsShortLivedAccessTokenResponse = response.body()
+        val accessTokenResponse: ShortLivedAccessTokenResponse = response.body()
         println("Received short lived access token: ${accessTokenResponse.access_token}")
         return accessTokenResponse.access_token
     }
@@ -140,7 +188,7 @@ class ThreadsPlatform(id: UUID?, name: String, private val server: Server, priva
         }
 
 
-        val accessTokenResponse: ThreadsLongLivedAccessTokenResponse = response.body()
+        val accessTokenResponse: LongLivedAccessTokenResponse = response.body()
         println("Received long lived access token: ${accessTokenResponse.access_token}")
         val authKey = AuthKey(name, accessTokenResponse.access_token, Date(), Date(Date().time + accessTokenResponse.expires_in * 1000))
         return authKey
@@ -152,7 +200,7 @@ class ThreadsPlatform(id: UUID?, name: String, private val server: Server, priva
             parameter("grant_type", "th_refresh_token")
         }
 
-        val accessTokenResponse: ThreadsLongLivedAccessTokenResponse = response.body()
+        val accessTokenResponse: LongLivedAccessTokenResponse = response.body()
         println("Received long lived access token: ${accessTokenResponse.access_token}")
         val authKey = AuthKey(name, accessTokenResponse.access_token, Date(), Date(Date().time + accessTokenResponse.expires_in * 1000))
         return authKey

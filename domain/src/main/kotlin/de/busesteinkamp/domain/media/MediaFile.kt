@@ -8,10 +8,9 @@ abstract class MediaFile(
     var filename: String,
     var filetype: String,
     var fileSize: Long,
-    var uploadStatus: UploadStatus? = UploadStatus.INITIAL
 ) {
     override fun toString(): String {
-        return "MediaFile(id=$id, filename='$filename', filetype='$filetype', fileSize=$fileSize, uploadStatus=$uploadStatus)"
+        return "MediaFile(id=$id, filename='$filename', filetype='$filetype', fileSize=$fileSize)"
     }
 
     abstract fun loadFile()

@@ -4,14 +4,15 @@ import de.busesteinkamp.domain.media.MediaFile
 import de.busesteinkamp.domain.process.UploadStatus
 import java.util.*
 
-class TxtFile(id: UUID?, filename: String, filetype: String, fileSize: Long, uploadStatus: UploadStatus?) : MediaFile(
+class TxtFile(id: UUID?, filename: String, fileSize: Long) : MediaFile(
     id,
     filename,
-    filetype,
-    fileSize,
-    uploadStatus
+    filetype = "text/plain",
+    fileSize
 ) {
+    var textContent: String = ""
+
     override fun loadFile() {
-        TODO("Not yet implemented")
+        textContent = java.io.File(filename).readText()
     }
 }
