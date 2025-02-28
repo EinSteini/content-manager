@@ -12,6 +12,7 @@ repositories {
 dependencies {
     testImplementation(kotlin("test"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
+    implementation("org.xerial:sqlite-jdbc:3.45.1.0")
     implementation(project(":adapters"))
     implementation(project(":application"))
     implementation(project(":domain"))
@@ -19,6 +20,7 @@ dependencies {
     implementation(project(":plugins:threads_plugin"))
     implementation(project(":plugins:txt_plugin"))
     implementation(project(":plugins:ktor_server_plugin"))
+    implementation(project(":plugins:sqlite_authkey_storage_plugin"))
 }
 
 tasks.test {

@@ -31,4 +31,8 @@ class JpaPlatformRepository : PlatformRepository {
     override fun findAll(): List<Platform> {
         return entityManager.createQuery("SELECT p FROM Platform p", Platform::class.java).resultList
     }
+
+    override fun save(platform: Platform): Platform {
+        TODO("Not yet implemented")
+    }
 }

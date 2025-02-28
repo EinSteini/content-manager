@@ -4,10 +4,12 @@ import de.busesteinkamp.domain.server.RouteDefinition
 import de.busesteinkamp.domain.server.Server
 import de.busesteinkamp.domain.server.ServerPlugin
 import io.ktor.http.*
+import io.ktor.network.tls.certificates.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
-import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import org.slf4j.LoggerFactory
+import java.io.File
 
 class KtorServer(private val port: Int) : Server {
     private val plugins = mutableListOf<ServerPlugin>()
@@ -18,7 +20,8 @@ class KtorServer(private val port: Int) : Server {
     override fun start() {
         plugins.forEach { it.onLoad(this) }
 
-        ktorApp = embeddedServer(Netty, port) {
+        ktorApp = embeddedServer(Netty, applicationEnvironment { log = LoggerFactory.getLogger("ktor.application") },
+            { envConfig() }) {
             routing {
                 for ((_, routeDef) in dynamicRoutes) {
                     addRouteInternal(routeDef)
@@ -39,6 +42,12 @@ class KtorServer(private val port: Int) : Server {
 
     override fun registerPlugin(plugin: ServerPlugin) {
         plugins.add(plugin)
+    }
+
+    override fun unregisterPlugin(plugin: ServerPlugin) {
+        plugin.onRemove(this)
+        plugins.remove(plugin)
+        restartServer()
     }
 
     override fun addRoute(route: RouteDefinition) {
@@ -69,5 +78,36 @@ class KtorServer(private val port: Int) : Server {
             HttpMethod.Delete -> delete(routeDef.path, routeDef.handler)
             else -> throw IllegalArgumentException("Unsupported HTTP method")
         }
+    }
+
+    private fun ApplicationEngine.Configuration.envConfig() {
+        val keyStorePassword = "12345678"
+        val privateKeyPassword = "12345678"
+
+        val keyStoreFile = File("build/ktorServer.jks")
+        val keyStore = buildKeyStore {
+            certificate("ktorServer") {
+                password = privateKeyPassword
+                domains = listOf("127.0.0.1", "0.0.0.0", "localhost")
+            }
+        }
+        keyStore.saveToFile(keyStoreFile, keyStorePassword)
+
+        sslConnector(
+            keyStore = keyStore,
+            keyAlias = "ktorServer",
+            keyStorePassword = { keyStorePassword.toCharArray() },
+            privateKeyPassword = { privateKeyPassword.toCharArray() }) {
+            port = getPort()
+            keyStorePath = keyStoreFile
+        }
+    }
+
+    override fun getPort(): Int {
+        return port
+    }
+
+    override fun getAddress(): String {
+        return "https://0.0.0.0:$port" // Todo: get actual IP
     }
 }

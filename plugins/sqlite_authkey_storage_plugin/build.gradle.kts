@@ -14,7 +14,7 @@ dependencies {
     implementation(project(":adapters"))
     implementation(project(":application"))
     implementation(project(":domain"))
-    implementation(project(":plugins:inmemory_plugin"))
+    implementation("org.xerial:sqlite-jdbc:3.45.1.0")
 }
 
 tasks.test {
