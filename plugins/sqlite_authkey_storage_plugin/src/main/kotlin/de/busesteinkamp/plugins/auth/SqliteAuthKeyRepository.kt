@@ -36,8 +36,8 @@ class SqliteAuthKeyRepository : AuthKeyRepository {
                     AuthKey(
                         platformName,
                         resultSet.getString("authKey"),
-                        parseDate(resultSet.getString("createdAt")),
-                        parseDate(resultSet.getString("expiresAt"))
+                        Date(resultSet.getLong("createdAt")),
+                        Date(resultSet.getLong("expiresAt"))
                     )
                 } else {
                     null

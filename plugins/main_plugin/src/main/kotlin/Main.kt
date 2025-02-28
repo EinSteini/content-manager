@@ -1,7 +1,7 @@
 package de.busesteinkamp
 
 import de.busesteinkamp.application.media.GetMediaFileUseCase
-import de.busesteinkamp.application.media.UploadMediaFileUseCase
+import de.busesteinkamp.application.process.ExecuteDistributionUseCase
 import de.busesteinkamp.domain.auth.AuthKeyRepository
 import de.busesteinkamp.plugins.media.InMemoryMediaFileRepository
 import de.busesteinkamp.plugins.media.InMemoryPlatformRepository
@@ -10,6 +10,8 @@ import de.busesteinkamp.domain.media.MediaFileRepository
 import de.busesteinkamp.domain.platform.Platform
 import de.busesteinkamp.domain.platform.PlatformRepository
 import de.busesteinkamp.domain.platform.PublishParameters
+import de.busesteinkamp.domain.process.Distribution
+import de.busesteinkamp.domain.process.DistributionRepository
 import de.busesteinkamp.domain.process.UploadStatus
 import de.busesteinkamp.domain.server.Server
 import de.busesteinkamp.domain.user.User
@@ -17,6 +19,7 @@ import de.busesteinkamp.domain.user.UserRepository
 import de.busesteinkamp.plugins.auth.SqliteAuthKeyRepository
 import de.busesteinkamp.plugins.media.TxtFile
 import de.busesteinkamp.plugins.platform.ThreadsPlatform
+import de.busesteinkamp.plugins.process.InMemoryDistributionRepository
 import de.busesteinkamp.plugins.server.KtorServer
 import de.busesteinkamp.plugins.user.InMemoryUserRepository
 import kotlinx.coroutines.delay
@@ -30,16 +33,22 @@ fun main(args: Array<String>): Unit = runBlocking {
     val mediaFileRepository: MediaFileRepository = InMemoryMediaFileRepository() // Verwende InMemoryMediaFileRepository
     val platformRepository: PlatformRepository = InMemoryPlatformRepository()
     val userRepository: UserRepository = InMemoryUserRepository()
-    val uploadMediaFileUseCase = UploadMediaFileUseCase(mediaFileRepository, platformRepository)
+    val distributionRepository: DistributionRepository = InMemoryDistributionRepository()
+    val executeDistributionUseCase = ExecuteDistributionUseCase(distributionRepository)
     val getMediaFileUseCase = GetMediaFileUseCase(mediaFileRepository)
     val server: Server = KtorServer(8443)
     val authKeyRepository: AuthKeyRepository = SqliteAuthKeyRepository()
 
+    val examplePostPath = javaClass.getResource("/example_post.txt")?.path
+    if(examplePostPath == null) {
+        println("Could not find example_post.txt")
+        return@runBlocking
+    }
     // Beispielhafte Verwendung der Use Cases
     val mediaFile: MediaFile = TxtFile(
-        filename = "/Users/niklas/DEV/AdvSWEProjekt/content-manager/test.txt", filetype = "text/plain", fileSize = 1234,
-        id = UUID.randomUUID(),
-        uploadStatus = UploadStatus.INITIAL
+        filename = examplePostPath,
+        fileSize = 1234,
+        id = UUID.randomUUID()
     )
     println(mediaFile.toString())
 
@@ -50,13 +59,14 @@ fun main(args: Array<String>): Unit = runBlocking {
     val publishParameters: PublishParameters = PublishParameters()
     publishParameters.title = "New Post"
 
+    val distribution = Distribution(
+        mediaFile = mediaFile,
+        publishParameters = publishParameters,
+        platforms = mainUser.platforms
+    )
+
     server.start()
-    uploadMediaFileUseCase.execute(mediaFile, mainUser, publishParameters)
-
-    delay(5000)
-
-    val uploadedFile = getMediaFileUseCase.execute(mediaFile.id!!)
-    println(uploadedFile)
+    executeDistributionUseCase.execute(distribution)
 
     Scanner(System.`in`).nextLine()
 }
