@@ -11,31 +11,36 @@ class SqliteAuthKeyRepository : AuthKeyRepository {
 
     init {
         Class.forName("org.sqlite.JDBC")
-
-        val connection = DriverManager.getConnection(url)
-        val statement = connection.createStatement()
-        statement.executeUpdate(
-            "CREATE TABLE IF NOT EXISTS auth_keys (platformName TEXT, authKey TEXT, createdAt TEXT, expiresAt TEXT)"
-        )
-        statement.close()
-        connection.close()
+        createTableIfNotExists()
+      }
+      private fun createTableIfNotExists() {
+        try (val connection = DriverManager.getConnection(url);
+             val statement = connection.createStatement()) {
+            statement.executeUpdate(
+                "CREATE TABLE IF NOT EXISTS auth_keys (platformName TEXT PRIMARY KEY, authKey TEXT, createdAt TEXT, expiresAt TEXT)"
+            )
+        } catch (e: SQLException) {
+            throw RuntimeException("Error creating table", e)
+        }
+    }
+        
+        
     }
 
     override fun find(platformName: String): AuthKey? {
-        val connection = DriverManager.getConnection(url)
-        val statement = connection.createStatement()
-        val resultSet = statement.executeQuery(
-            "SELECT authKey, createdAt, expiresAt FROM auth_keys WHERE platformName = '$platformName'"
-        )
-        val authKey = if (resultSet.next()) {
-            AuthKey(platformName, resultSet.getString("authKey"), parseDate(resultSet.getString("createdAt")), parseDate(resultSet.getString("expiresAt")))
-        } else {
-            null
+        val sql = "SELECT authKey, createdAt, expiresAt FROM auth_keys WHERE platformName = ?"
+        try (val connection = DriverManager.getConnection(url);
+             val preparedStatement = connection.prepareStatement(sql)) {
+            preparedStatement.setString(1, platformName)
+            val resultSet = preparedStatement.executeQuery()
+            return if (resultSet.next()) {
+                AuthKey(platformName, resultSet.getString("authKey"), parseDate(resultSet.getString("createdAt")), parseDate(resultSet.getString("expiresAt")))
+            } else {
+                null
+            }
+        } catch (e: SQLException) {
+            throw RuntimeException("Error finding auth key", e)
         }
-        resultSet.close()
-        statement.close()
-        connection.close()
-        return authKey
     }
 
     override fun save(authKey: AuthKey): AuthKey {
