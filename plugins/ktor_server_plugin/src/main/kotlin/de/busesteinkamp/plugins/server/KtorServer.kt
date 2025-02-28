@@ -4,13 +4,12 @@ import de.busesteinkamp.domain.server.RouteDefinition
 import de.busesteinkamp.domain.server.Server
 import de.busesteinkamp.domain.server.ServerPlugin
 import io.ktor.http.*
+import io.ktor.network.tls.certificates.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.routing.*
 import org.slf4j.LoggerFactory
 import java.io.File
-import java.io.FileNotFoundException
-import java.security.KeyStore
 
 class KtorServer(private val port: Int) : Server {
     private val plugins = mutableListOf<ServerPlugin>()
@@ -82,30 +81,23 @@ class KtorServer(private val port: Int) : Server {
     }
 
     private fun ApplicationEngine.Configuration.envConfig() {
-        val keyStoreFile = File("ktorServer.jks")
-        if (!keyStoreFile.exists()) {
-            throw FileNotFoundException("Keystore file not found: ${keyStoreFile.absolutePath}")
+        val keyStorePassword = "12345678"
+        val privateKeyPassword = "12345678"
+
+        val keyStoreFile = File("build/ktorServer.jks")
+        val keyStore = buildKeyStore {
+            certificate("ktorServer") {
+                password = privateKeyPassword
+                domains = listOf("127.0.0.1", "0.0.0.0", "localhost")
+            }
         }
-
-        val keyStorePassword = "12345678".toCharArray()
-        val privateKeyPassword = "12345678".toCharArray()
-
-        val keyStore = KeyStore.getInstance("JKS").apply {
-            load(keyStoreFile.inputStream(), keyStorePassword)
-        }
-
-        val sslKeyStore = KeyStore.getInstance("JKS")
-        sslKeyStore.load(keyStoreFile.inputStream(), keyStorePassword)
-
-        if (!keyStore.containsAlias("ktorServer")) {
-            throw IllegalArgumentException("Alias 'ktorServer' not found in keystore")
-        }
+        keyStore.saveToFile(keyStoreFile, keyStorePassword)
 
         sslConnector(
             keyStore = keyStore,
             keyAlias = "ktorServer",
-            keyStorePassword = { keyStorePassword },
-            privateKeyPassword = { privateKeyPassword }) {
+            keyStorePassword = { keyStorePassword.toCharArray() },
+            privateKeyPassword = { privateKeyPassword.toCharArray() }) {
             port = getPort()
             keyStorePath = keyStoreFile
         }
