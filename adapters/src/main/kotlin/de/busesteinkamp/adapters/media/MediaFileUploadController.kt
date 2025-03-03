@@ -4,18 +4,15 @@ import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpHandler
 import com.sun.net.httpserver.HttpServer
 import de.busesteinkamp.application.media.GetMediaFileUseCase
-import de.busesteinkamp.application.media.UploadMediaFileUseCase
-import de.busesteinkamp.domain.media.MediaFile
+import de.busesteinkamp.application.process.ExecuteDistributionUseCase
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import java.io.BufferedReader
-import java.io.InputStreamReader
 import java.io.OutputStream
 import java.net.InetSocketAddress
 import java.util.UUID
 
 class MediaFileUploadController(
-    private val uploadMediaFileUseCase: UploadMediaFileUseCase,
+    private val executeDistributionUseCase: ExecuteDistributionUseCase,
     private val getMediaFileUseCase: GetMediaFileUseCase
 ) : HttpHandler {
 

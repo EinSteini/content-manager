@@ -16,6 +16,7 @@ dependencies {
     implementation(project(":application"))
     implementation(project(":domain"))
     implementation(project(":plugins:ktor_server_plugin"))
+    implementation(project(":plugins:txt_plugin"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
     implementation("io.ktor:ktor-server-core:3.1.0")
     implementation("io.ktor:ktor-server-netty:3.1.0")
