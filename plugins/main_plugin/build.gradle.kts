@@ -18,6 +18,7 @@ dependencies {
     implementation(project(":domain"))
     implementation(project(":plugins:inmemory_plugin"))
     implementation(project(":plugins:threads_plugin"))
+    implementation(project(":plugins:bluesky_plugin"))
     implementation(project(":plugins:txt_plugin"))
     implementation(project(":plugins:ktor_server_plugin"))
     implementation(project(":plugins:sqlite_authkey_storage_plugin"))
