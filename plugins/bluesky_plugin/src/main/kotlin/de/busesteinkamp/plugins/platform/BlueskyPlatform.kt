@@ -3,6 +3,7 @@ package de.busesteinkamp.plugins.platform
 import de.busesteinkamp.domain.media.MediaFile
 import de.busesteinkamp.domain.platform.Platform
 import de.busesteinkamp.domain.platform.PublishParameters
+import de.busesteinkamp.plugins.media.ImageFile
 import de.busesteinkamp.plugins.media.TxtFile
 import io.github.cdimascio.dotenv.dotenv
 import io.ktor.client.*
@@ -10,8 +11,10 @@ import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
+import io.ktor.client.request.forms.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import io.ktor.http.content.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -37,20 +40,38 @@ class BlueskyPlatform(id: UUID?, name: String) : Platform(id, name) {
     private var authToken: String = ""
 
     @Serializable
-    data class BlueskyAuthRequest(val identifier: String, val password: String)
+    private data class BlueskyAuthRequest(val identifier: String, val password: String)
 
     @Serializable
-    data class BlueskyAuthResponse(val accessJwt: String, val refreshJwt: String)
+    private data class BlueskyAuthResponse(val accessJwt: String, val refreshJwt: String)
 
     @Serializable
-    data class BlueskyPostRecord(val text: String, val createdAt: String)
+    private data class BlueskyPostRecord(val text: String, val createdAt: String, val embed: BlueskyPostEmbedImages? = null, val `$type`: String = "app.bsky.feed.post")
 
     @Serializable
-    data class BlueskyCreatePostRequest(
+    private data class BlueskyCreatePostRequest(
         val collection: String,
         val repo: String,
         val record: BlueskyPostRecord
     )
+
+    @Serializable
+    private data class BlueskyUploadResponse(val blob: BlueskyBlob)
+
+    @Serializable
+    private data class BlueskyBlob(val ref: BlueskyBlobRef, val mimeType: String, val `$type`: String, val size: Int)
+
+    @Serializable
+    private data class BlueskyBlobRef(val `$link`: String)
+
+    @Serializable
+    private data class BlueskyPostEmbedImages(
+        val images: List<BlueskyBlobImage>,
+        val `$type`: String
+    )
+
+    @Serializable
+    private data class BlueskyBlobImage(val alt: String, val image: BlueskyBlob) // todo: aspect ratio missing
 
     init {
         val dotenv = dotenv()
@@ -65,7 +86,9 @@ class BlueskyPlatform(id: UUID?, name: String) : Platform(id, name) {
         CoroutineScope(Dispatchers.IO).launch {
             authorize()
             when(mediaFile.filetype){
-                "text/plain" -> uploadText(mediaFile)
+                "text/plain" -> handleTextPost(mediaFile)
+                "image/jpeg"-> handleImagePost(mediaFile, publishParameters)
+                "image/png" -> handleImagePost(mediaFile, publishParameters)
                 else -> throw IllegalArgumentException("Unsupported filetype")
             }
         }
@@ -81,7 +104,7 @@ class BlueskyPlatform(id: UUID?, name: String) : Platform(id, name) {
         authToken = response.accessJwt
     }
 
-    private suspend fun uploadText(mediaFile: MediaFile){
+    private suspend fun handleTextPost(mediaFile: MediaFile){
         println("Uploading text file to Bluesky")
         val textFile = mediaFile as TxtFile
         textFile.loadFile()
@@ -101,6 +124,55 @@ class BlueskyPlatform(id: UUID?, name: String) : Platform(id, name) {
             throw IllegalStateException("Error uploading text file to Threads. Server responded with status ${response.status}")
         }
         println("Text file uploaded to Bluesky")
+    }
+
+    private suspend fun handleImagePost(mediaFile: MediaFile, publishParameters: PublishParameters){
+        val blobRef = uploadImage(mediaFile)
+        val blobRefs = listOf(BlueskyBlobImage(
+            alt = (mediaFile as ImageFile).altText,
+            image = blobRef.blob
+        ))
+        createPostWithImages(blobRefs, publishParameters)
+    }
+
+    private suspend fun uploadImage(mediaFile: MediaFile): BlueskyUploadResponse {
+        println("Uploading image file to Bluesky")
+        val imageFile = mediaFile as ImageFile
+        imageFile.loadFile()
+
+        val response = client.post("https://bsky.social/xrpc/com.atproto.repo.uploadBlob") {
+            bearerAuth(authToken)
+            setBody(ByteArrayContent(imageFile.fileContent, contentType = ContentType.parse(imageFile.filetype)))
+        }
+
+        if(response.status != HttpStatusCode.OK){
+            throw IllegalStateException("Error uploading image file to Threads. Server responded with status ${response.status}")
+        }
+        println("Image file uploaded to Bluesky")
+
+        return response.body()
+    }
+
+    private suspend fun createPostWithImages(blobs: List<BlueskyBlobImage>, publishParameters: PublishParameters) {
+        val postRequest = BlueskyCreatePostRequest(
+            repo = username,
+            record = BlueskyPostRecord(
+                `$type` = "app.bsky.feed.post",
+                text = publishParameters.title,
+                createdAt = convertDateToIso8601(Date()),
+                embed = BlueskyPostEmbedImages(
+                    images = blobs,
+                    `$type` = "app.bsky.embed.images"
+                )
+            ),
+            collection = "app.bsky.feed.post"
+        )
+
+        val response = client.post("https://bsky.social/xrpc/com.atproto.repo.createRecord") {
+            bearerAuth(authToken)
+            contentType(ContentType.Application.Json)
+            setBody(postRequest)
+        }
     }
 
     private fun convertDateToIso8601(date: Date): String {

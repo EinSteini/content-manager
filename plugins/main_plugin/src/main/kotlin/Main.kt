@@ -17,6 +17,7 @@ import de.busesteinkamp.domain.server.Server
 import de.busesteinkamp.domain.user.User
 import de.busesteinkamp.domain.user.UserRepository
 import de.busesteinkamp.plugins.auth.SqliteAuthKeyRepository
+import de.busesteinkamp.plugins.media.ImageFile
 import de.busesteinkamp.plugins.media.TxtFile
 import de.busesteinkamp.plugins.platform.BlueskyPlatform
 import de.busesteinkamp.plugins.platform.ThreadsPlatform
@@ -45,6 +46,13 @@ fun main(args: Array<String>): Unit = runBlocking {
         println("Could not find example_post.txt")
         return@runBlocking
     }
+
+    val exampleImagePath = javaClass.getResource("/helloworld.jpg")?.path
+    if(exampleImagePath == null) {
+        println("Could not find helloworld.jpg")
+        return@runBlocking
+    }
+
     // Beispielhafte Verwendung der Use Cases
     val mediaFile: MediaFile = TxtFile(
         filename = examplePostPath,
@@ -53,13 +61,20 @@ fun main(args: Array<String>): Unit = runBlocking {
     )
     println(mediaFile.toString())
 
+    val imageFile: MediaFile = ImageFile(
+        filename = exampleImagePath,
+        fileSize = 1234,
+        id = UUID.randomUUID(),
+        altText = "A nice welcome image"
+    )
+
     val userId = UUID.randomUUID()
     val threads: Platform = ThreadsPlatform(UUID.randomUUID(), "Threads", server, authKeyRepository)
     val bsky: Platform = BlueskyPlatform(UUID.randomUUID(), "Bluesky")
     val mainUser: User = User(UUID.randomUUID(), "main", listOf(threads, bsky))
     platformRepository.save(threads)
     val publishParameters: PublishParameters = PublishParameters()
-    publishParameters.title = "New Post"
+    publishParameters.title = "Jetzt sogar mit Bildern!"
 
     val distribution = Distribution(
         mediaFile = mediaFile,
@@ -67,8 +82,14 @@ fun main(args: Array<String>): Unit = runBlocking {
         platforms = mainUser.platforms
     )
 
+    val imageDistribution = Distribution(
+        mediaFile = imageFile,
+        publishParameters = publishParameters,
+        platforms = listOf(bsky)
+    )
+
     server.start()
-    executeDistributionUseCase.execute(distribution)
+    executeDistributionUseCase.execute(imageDistribution)
 
     Scanner(System.`in`).nextLine()
 }
