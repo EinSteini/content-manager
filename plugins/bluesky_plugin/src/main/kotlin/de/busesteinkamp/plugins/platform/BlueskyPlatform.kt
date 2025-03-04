@@ -12,7 +12,6 @@ import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
-import io.ktor.client.request.forms.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.http.content.*
@@ -47,7 +46,7 @@ class BlueskyPlatform(id: UUID?, name: String) : Platform(id, name) {
     private data class BlueskyAuthResponse(val accessJwt: String, val refreshJwt: String)
 
     @Serializable
-    private data class BlueskyPostRecord(val text: String, val createdAt: String, val embed: BlueskyPostEmbedImages? = null, val `$type`: String = "app.bsky.feed.post")
+    private data class BlueskyPostRecord(val text: String, val createdAt: String, val embed: BlueskyPostEmbedImages? = null, val `$type`: String = "app.bsky.feed.post", val facets: List<BlueskyFacet> = emptyList())
 
     @Serializable
     private data class BlueskyCreatePostRequest(
@@ -73,6 +72,22 @@ class BlueskyPlatform(id: UUID?, name: String) : Platform(id, name) {
 
     @Serializable
     private data class BlueskyBlobImage(val alt: String, val image: BlueskyBlob) // todo: aspect ratio missing
+
+    @Serializable
+    private data class BlueskyFacetIndex(val byteStart: Int, val byteEnd: Int)
+
+    @Serializable
+    private data class BlueskyFacetFeature(val `$type`: String, val did: String = "", val uri: String = "", val tag: String = "")
+
+    @Serializable
+    private data class BlueskyFacet(val index: BlueskyFacetIndex, val features: List<BlueskyFacetFeature>)
+
+    @Serializable
+    private data class BlueskyHandleResolve(val did: String)
+
+    data class MentionSpan(val start: Int, val end: Int, val handle: String)
+    data class UrlSpan(val start: Int, val end: Int, val url: String)
+    data class HashtagSpan(val start: Int, val end: Int, val hashtag: String)
 
     init {
         val dotenv = dotenv()
@@ -114,7 +129,7 @@ class BlueskyPlatform(id: UUID?, name: String) : Platform(id, name) {
         val postRequest = BlueskyCreatePostRequest(
             collection = "app.bsky.feed.post",
             repo = username,
-            record = BlueskyPostRecord(textFile.textContent, convertDateToIso8601(Date()))
+            record = BlueskyPostRecord(textFile.textContent, convertDateToIso8601(Date()), facets = parseFacets(textFile.textContent)),
         )
 
         val response = client.post("https://bsky.social/xrpc/com.atproto.repo.createRecord") {
@@ -123,7 +138,7 @@ class BlueskyPlatform(id: UUID?, name: String) : Platform(id, name) {
             setBody(postRequest)
         }
         if(response.status != HttpStatusCode.OK){
-            throw IllegalStateException("Error uploading text file to Threads. Server responded with status ${response.status}")
+            throw IllegalStateException("Error uploading text file to Threads. Server responded with status ${response.status}: ${response.bodyAsText()}")
         }
         println("Text file uploaded to Bluesky")
     }
@@ -176,7 +191,7 @@ class BlueskyPlatform(id: UUID?, name: String) : Platform(id, name) {
         }
 
         if(response.status != HttpStatusCode.OK){
-            throw IllegalStateException("Error uploading image file to Threads. Server responded with status ${response.status}")
+            throw IllegalStateException("Error uploading image file to Threads. Server responded with status ${response.status}: ${response.bodyAsText()}")
         }
         println("Image file uploaded to Bluesky")
 
@@ -211,6 +226,94 @@ class BlueskyPlatform(id: UUID?, name: String) : Platform(id, name) {
 
     private fun convertDateToIso8601(date: Date): String {
         return date.toInstant().toString()
+    }
+
+    private suspend fun parseFacets(text: String): List<BlueskyFacet> {
+        val mentions = parseMentions(text)
+        val urls = parseUrls(text)
+        val hashtags = parseHashtags(text)
+
+        val facets = mutableListOf<BlueskyFacet>()
+
+        mentions.forEach {
+            val response = client.get("https://bsky.social/xrpc/com.atproto.identity.resolveHandle"){
+                parameter("handle", it.handle)
+            }
+
+            if (response.status == HttpStatusCode.OK) {
+                val did: BlueskyHandleResolve = response.body()
+                facets.add(
+                    BlueskyFacet(
+                        index = BlueskyFacetIndex(it.start, it.end),
+                        features = listOf(
+                            BlueskyFacetFeature(
+                                `$type` = "app.bsky.richtext.facet#mention",
+                                did = did.did
+                            )
+                        )
+                    )
+                )
+            }
+        }
+
+        urls.forEach {
+            facets.add(
+                BlueskyFacet(
+                    index = BlueskyFacetIndex(it.start, it.end),
+                    features = listOf(BlueskyFacetFeature(`$type` = "app.bsky.richtext.facet#link", uri = it.url))
+                )
+            )
+        }
+
+        hashtags.forEach {
+            facets.add(
+                BlueskyFacet(
+                    index = BlueskyFacetIndex(it.start, it.end),
+                    features = listOf(BlueskyFacetFeature(`$type` = "app.bsky.richtext.facet#tag", tag = it.hashtag))
+                )
+            )
+        }
+
+        return facets
+    }
+
+    private fun parseMentions(text: String): List<MentionSpan> {
+        val spans = mutableListOf<MentionSpan>()
+
+        // Regex based on AT Protocol handle syntax
+        val mentionRegex = """(?:\W|^)(@([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)""".toRegex()
+
+        mentionRegex.findAll(text).forEach { matchResult ->
+            val handle = matchResult.groups[1]?.value?.substring(1) ?: return@forEach
+            spans.add(MentionSpan(matchResult.range.first, matchResult.range.last + 1, handle))
+        }
+        return spans
+    }
+
+    private fun parseUrls(text: String): List<UrlSpan> {
+        val spans = mutableListOf<UrlSpan>()
+
+        // Regex for detecting URLs
+        val urlRegex = """(?:\W|^)(https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*[-a-zA-Z0-9@%_+~#//=])?)""".toRegex()
+
+        urlRegex.findAll(text).forEach { matchResult ->
+            val url = matchResult.groups[1]?.value ?: return@forEach
+            spans.add(UrlSpan(matchResult.range.first, matchResult.range.last + 1, url))
+        }
+        return spans
+    }
+
+    private fun parseHashtags(text: String): List<HashtagSpan> {
+        val spans = mutableListOf<HashtagSpan>()
+
+        // Regex for detecting hashtags
+        val hashtagRegex = """(?:\W|^)(#[a-zA-Z0-9_]+)""".toRegex()
+
+        hashtagRegex.findAll(text).forEach { matchResult ->
+            val hashtag = matchResult.groups[1]?.value ?: return@forEach
+            spans.add(HashtagSpan(matchResult.range.first, matchResult.range.last + 1, hashtag))
+        }
+        return spans
     }
 
 }
