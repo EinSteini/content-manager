@@ -3,6 +3,7 @@ package de.busesteinkamp.plugins.platform
 import de.busesteinkamp.domain.media.MediaFile
 import de.busesteinkamp.domain.platform.Platform
 import de.busesteinkamp.domain.platform.PublishParameters
+import de.busesteinkamp.plugins.data.*
 import de.busesteinkamp.plugins.media.ImageFile
 import de.busesteinkamp.plugins.media.MultipleImageFiles
 import de.busesteinkamp.plugins.media.TxtFile
@@ -19,7 +20,6 @@ import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.util.*
 
@@ -38,56 +38,6 @@ class BlueskyPlatform(id: UUID?, name: String) : Platform(id, name) {
     private val password: String
 
     private var authToken: String = ""
-
-    @Serializable
-    private data class BlueskyAuthRequest(val identifier: String, val password: String)
-
-    @Serializable
-    private data class BlueskyAuthResponse(val accessJwt: String, val refreshJwt: String)
-
-    @Serializable
-    private data class BlueskyPostRecord(val text: String, val createdAt: String, val embed: BlueskyPostEmbedImages? = null, val `$type`: String = "app.bsky.feed.post", val facets: List<BlueskyFacet> = emptyList())
-
-    @Serializable
-    private data class BlueskyCreatePostRequest(
-        val collection: String,
-        val repo: String,
-        val record: BlueskyPostRecord
-    )
-
-    @Serializable
-    private data class BlueskyUploadResponse(val blob: BlueskyBlob)
-
-    @Serializable
-    private data class BlueskyBlob(val ref: BlueskyBlobRef, val mimeType: String, val `$type`: String, val size: Int)
-
-    @Serializable
-    private data class BlueskyBlobRef(val `$link`: String)
-
-    @Serializable
-    private data class BlueskyPostEmbedImages(
-        val images: List<BlueskyBlobImage>,
-        val `$type`: String
-    )
-
-    @Serializable
-    private data class BlueskyBlobImage(val alt: String, val image: BlueskyBlob) // todo: aspect ratio missing
-
-    @Serializable
-    private data class BlueskyFacetIndex(val byteStart: Int, val byteEnd: Int)
-
-    @Serializable
-    private data class BlueskyFacetFeature(val `$type`: String, val did: String = "", val uri: String = "", val tag: String = "")
-
-    @Serializable
-    private data class BlueskyFacet(val index: BlueskyFacetIndex, val features: List<BlueskyFacetFeature>)
-
-    @Serializable
-    private data class BlueskyHandleResolve(val did: String)
-
-    data class MentionSpan(val start: Int, val end: Int, val handle: String)
-    data class UrlSpan(val start: Int, val end: Int, val url: String)
-    data class HashtagSpan(val start: Int, val end: Int, val hashtag: String)
 
     init {
         val dotenv = dotenv()
@@ -145,10 +95,12 @@ class BlueskyPlatform(id: UUID?, name: String) : Platform(id, name) {
 
     private suspend fun handleImagePost(mediaFile: MediaFile, publishParameters: PublishParameters){
         val blobRef = uploadImage(mediaFile)
-        val blobRefs = listOf(BlueskyBlobImage(
+        val blobRefs = listOf(
+            BlueskyBlobImage(
             alt = (mediaFile as ImageFile).altText,
             image = blobRef.blob
-        ))
+        )
+        )
         createPostWithImages(blobRefs, publishParameters)
     }
 
@@ -208,7 +160,8 @@ class BlueskyPlatform(id: UUID?, name: String) : Platform(id, name) {
                 embed = BlueskyPostEmbedImages(
                     images = blobs,
                     `$type` = "app.bsky.embed.images"
-                )
+                ),
+                facets = parseFacets(publishParameters.title)
             ),
             collection = "app.bsky.feed.post"
         )
