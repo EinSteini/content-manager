@@ -3,11 +3,11 @@ package de.busesteinkamp.plugins.media
 import de.busesteinkamp.domain.media.MediaFile
 import java.util.*
 
-class ImageFile(id: UUID?, filename: String, fileSize: Long, val altText: String) : MediaFile(
+class ImageFile(id: UUID?, filename: String, val altText: String) : MediaFile(
     id,
     filename,
     filetype = "image/jpeg",
-    fileSize
+    fileSize = 0
 ){
     var fileContent: ByteArray = byteArrayOf()
 
@@ -18,9 +18,11 @@ class ImageFile(id: UUID?, filename: String, fileSize: Long, val altText: String
         }else if(fileEnding != "jpg" && fileEnding != "jpeg"){
             throw IllegalArgumentException("Only jpg and png files are supported")
         }
+        this.loadFile()
     }
 
     override fun loadFile() {
         fileContent = java.io.File(filename).readBytes()
+        fileSize = fileContent.size.toLong()
     }
 }
