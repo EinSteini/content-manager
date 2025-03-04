@@ -12,7 +12,12 @@ class TxtFile(id: UUID?, filename: String, fileSize: Long) : MediaFile(
 ) {
     var textContent: String = ""
 
+    init {
+        this.loadFile()
+    }
+
     override fun loadFile() {
         textContent = java.io.File(filename).readText()
+        fileSize = textContent.length.toLong()
     }
 }

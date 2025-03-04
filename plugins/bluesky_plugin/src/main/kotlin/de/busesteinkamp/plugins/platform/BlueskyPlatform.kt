@@ -4,6 +4,7 @@ import de.busesteinkamp.domain.media.MediaFile
 import de.busesteinkamp.domain.platform.Platform
 import de.busesteinkamp.domain.platform.PublishParameters
 import de.busesteinkamp.plugins.media.ImageFile
+import de.busesteinkamp.plugins.media.MultipleImageFiles
 import de.busesteinkamp.plugins.media.TxtFile
 import io.github.cdimascio.dotenv.dotenv
 import io.ktor.client.*
@@ -89,6 +90,7 @@ class BlueskyPlatform(id: UUID?, name: String) : Platform(id, name) {
                 "text/plain" -> handleTextPost(mediaFile)
                 "image/jpeg"-> handleImagePost(mediaFile, publishParameters)
                 "image/png" -> handleImagePost(mediaFile, publishParameters)
+                "image/multiple" -> handleMultipleImagePost(mediaFile, publishParameters)
                 else -> throw IllegalArgumentException("Unsupported filetype")
             }
         }
@@ -135,10 +137,38 @@ class BlueskyPlatform(id: UUID?, name: String) : Platform(id, name) {
         createPostWithImages(blobRefs, publishParameters)
     }
 
+    private suspend fun handleMultipleImagePost(mediaFile: MediaFile, publishParameters: PublishParameters){
+        val multipleImageFile = mediaFile as MultipleImageFiles
+
+        if(multipleImageFile.imageFiles.isEmpty()){
+            throw IllegalArgumentException("No image files provided")
+        }
+
+        if(multipleImageFile.imageFiles.size > 4){
+            throw IllegalArgumentException("Maximum of 4 images allowed")
+        }
+
+        val blobs = mutableListOf<BlueskyBlobImage>()
+        multipleImageFile.imageFiles.forEach({
+            val blob = uploadImage(it).blob
+            blobs.add(
+                BlueskyBlobImage(
+                    alt = it.altText,
+                    image = blob
+                )
+            )
+        })
+
+        createPostWithImages(blobs, publishParameters)
+     }
+
     private suspend fun uploadImage(mediaFile: MediaFile): BlueskyUploadResponse {
         println("Uploading image file to Bluesky")
         val imageFile = mediaFile as ImageFile
-        imageFile.loadFile()
+
+        if(imageFile.fileSize > 1000000){
+            throw IllegalArgumentException("Image file too large. Maximum size is 1MB")
+        }
 
         val response = client.post("https://bsky.social/xrpc/com.atproto.repo.uploadBlob") {
             bearerAuth(authToken)
@@ -172,6 +202,10 @@ class BlueskyPlatform(id: UUID?, name: String) : Platform(id, name) {
             bearerAuth(authToken)
             contentType(ContentType.Application.Json)
             setBody(postRequest)
+        }
+
+        if(response.status != HttpStatusCode.OK){
+            throw IllegalStateException("Error creating post with images on Threads. Server responded with status ${response.status}: ${response.bodyAsText()}")
         }
     }
 

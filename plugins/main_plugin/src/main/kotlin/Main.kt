@@ -3,8 +3,6 @@ package de.busesteinkamp
 import de.busesteinkamp.application.media.GetMediaFileUseCase
 import de.busesteinkamp.application.process.ExecuteDistributionUseCase
 import de.busesteinkamp.domain.auth.AuthKeyRepository
-import de.busesteinkamp.plugins.media.InMemoryMediaFileRepository
-import de.busesteinkamp.plugins.media.InMemoryPlatformRepository
 import de.busesteinkamp.domain.media.MediaFile
 import de.busesteinkamp.domain.media.MediaFileRepository
 import de.busesteinkamp.domain.platform.Platform
@@ -17,8 +15,7 @@ import de.busesteinkamp.domain.server.Server
 import de.busesteinkamp.domain.user.User
 import de.busesteinkamp.domain.user.UserRepository
 import de.busesteinkamp.plugins.auth.SqliteAuthKeyRepository
-import de.busesteinkamp.plugins.media.ImageFile
-import de.busesteinkamp.plugins.media.TxtFile
+import de.busesteinkamp.plugins.media.*
 import de.busesteinkamp.plugins.platform.BlueskyPlatform
 import de.busesteinkamp.plugins.platform.ThreadsPlatform
 import de.busesteinkamp.plugins.process.InMemoryDistributionRepository
@@ -63,9 +60,14 @@ fun main(args: Array<String>): Unit = runBlocking {
 
     val imageFile: MediaFile = ImageFile(
         filename = exampleImagePath,
-        fileSize = 1234,
         id = UUID.randomUUID(),
         altText = "A nice welcome image"
+    )
+
+    val imageFiles: MediaFile = MultipleImageFiles(
+        imagePaths = listOf(exampleImagePath, exampleImagePath,exampleImagePath, exampleImagePath ),
+        id = UUID.randomUUID(),
+        altTexts = listOf("A nice welcome image", "Another nice welcome image","A nice welcome image", "Another nice welcome image" )
     )
 
     val userId = UUID.randomUUID()
@@ -74,7 +76,7 @@ fun main(args: Array<String>): Unit = runBlocking {
     val mainUser: User = User(UUID.randomUUID(), "main", listOf(threads, bsky))
     platformRepository.save(threads)
     val publishParameters: PublishParameters = PublishParameters()
-    publishParameters.title = "Jetzt sogar mit Bildern!"
+    publishParameters.title = "Und sogar bis zu 4 Bilder klappen!"
 
     val distribution = Distribution(
         mediaFile = mediaFile,
@@ -83,13 +85,13 @@ fun main(args: Array<String>): Unit = runBlocking {
     )
 
     val imageDistribution = Distribution(
-        mediaFile = imageFile,
+        mediaFile = imageFiles,
         publishParameters = publishParameters,
         platforms = listOf(bsky)
     )
 
     server.start()
-    executeDistributionUseCase.execute(imageDistribution)
+    executeDistributionUseCase.execute(distribution)
 
     Scanner(System.`in`).nextLine()
 }
