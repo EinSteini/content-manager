@@ -7,5 +7,6 @@ abstract class Platform (
     var id: UUID? = null,
     var name: String,
 ) {
-    abstract fun upload(mediaFile: MediaFile, publishParameters: PublishParameters)
+    abstract suspend fun upload(mediaFile: MediaFile, publishParameters: PublishParameters)
+    abstract fun isDoneInitializing(): Boolean
 }
