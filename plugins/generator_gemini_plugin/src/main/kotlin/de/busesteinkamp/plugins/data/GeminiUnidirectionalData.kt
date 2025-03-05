@@ -1,4 +1,4 @@
-package data
+package de.busesteinkamp.plugins.data
 
 import kotlinx.serialization.Serializable
 

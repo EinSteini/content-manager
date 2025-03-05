@@ -1,6 +1,5 @@
 package de.busesteinkamp
 
-import client.GeminiClient
 import de.busesteinkamp.application.generate.GenerateTextPostUseCase
 import de.busesteinkamp.application.generate.TextPostGenerator
 import de.busesteinkamp.application.process.ExecuteDistributionUseCase
@@ -16,6 +15,7 @@ import de.busesteinkamp.domain.process.DistributionRepository
 import de.busesteinkamp.domain.server.Server
 import de.busesteinkamp.domain.user.User
 import de.busesteinkamp.plugins.auth.SqliteAuthKeyRepository
+import de.busesteinkamp.plugins.client.GeminiClient
 import de.busesteinkamp.plugins.media.InMemoryPlatformRepository
 import de.busesteinkamp.plugins.media.TxtFile
 import de.busesteinkamp.plugins.platform.ThreadsPlatform

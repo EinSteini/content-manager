@@ -1,7 +1,7 @@
-package client
+package de.busesteinkamp.plugins.client
 
-import data.*
 import de.busesteinkamp.domain.generator.GenAIService
+import de.busesteinkamp.plugins.data.*
 import io.github.cdimascio.dotenv.dotenv
 import io.ktor.client.*
 import io.ktor.client.call.*

@@ -14,7 +14,9 @@
             <option value="$PROJECT_DIR$/application" />
             <option value="$PROJECT_DIR$/domain" />
             <option value="$PROJECT_DIR$/plugins" />
+            <option value="$PROJECT_DIR$/plugins/bluesky_plugin" />
             <option value="$PROJECT_DIR$/plugins/generator_gemini_plugin" />
+            <option value="$PROJECT_DIR$/plugins/image_plugin" />
             <option value="$PROJECT_DIR$/plugins/inmemory_plugin" />
             <option value="$PROJECT_DIR$/plugins/jpa_plugin" />
             <option value="$PROJECT_DIR$/plugins/json_plugin" />
