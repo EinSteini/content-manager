@@ -27,6 +27,8 @@ include("plugins:ktor_server_plugin")
 findProject(":plugins:ktor_server_plugin")?.name = "ktor_server_plugin"
 include("plugins:sqlite_authkey_storage_plugin")
 findProject(":plugins:sqlite_authkey_storage_plugin")?.name = "sqlite_authkey_storage_plugin"
+include("plugins:generator_gemini_plugin")
+findProject(":plugins:generator_gemini_plugin")?.name = "generator_gemini_plugin"
 include("plugins:bluesky_plugin")
 findProject(":plugins:bluesky_plugin")?.name = "bluesky_plugin"
 include("plugins:image_plugin")

@@ -23,6 +23,7 @@ dependencies {
     implementation(project(":plugins:image_plugin"))
     implementation(project(":plugins:ktor_server_plugin"))
     implementation(project(":plugins:sqlite_authkey_storage_plugin"))
+    implementation(project(":plugins:generator_gemini_plugin"))
 }
 
 tasks.test {
