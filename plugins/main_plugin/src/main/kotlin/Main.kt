@@ -18,6 +18,7 @@ import de.busesteinkamp.domain.user.User
 import de.busesteinkamp.domain.user.UserRepository
 import de.busesteinkamp.plugins.auth.SqliteAuthKeyRepository
 import de.busesteinkamp.plugins.media.TxtFile
+import de.busesteinkamp.plugins.platform.BlueskyPlatform
 import de.busesteinkamp.plugins.platform.ThreadsPlatform
 import de.busesteinkamp.plugins.process.InMemoryDistributionRepository
 import de.busesteinkamp.plugins.server.KtorServer
@@ -54,7 +55,8 @@ fun main(args: Array<String>): Unit = runBlocking {
 
     val userId = UUID.randomUUID()
     val threads: Platform = ThreadsPlatform(UUID.randomUUID(), "Threads", server, authKeyRepository)
-    val mainUser: User = User(UUID.randomUUID(), "main", listOf(threads))
+    val bsky: Platform = BlueskyPlatform(UUID.randomUUID(), "Bluesky")
+    val mainUser: User = User(UUID.randomUUID(), "main", listOf(threads, bsky))
     platformRepository.save(threads)
     val publishParameters: PublishParameters = PublishParameters()
     publishParameters.title = "New Post"
