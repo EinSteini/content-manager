@@ -29,3 +29,5 @@ include("plugins:sqlite_authkey_storage_plugin")
 findProject(":plugins:sqlite_authkey_storage_plugin")?.name = "sqlite_authkey_storage_plugin"
 include("plugins:bluesky_plugin")
 findProject(":plugins:bluesky_plugin")?.name = "bluesky_plugin"
+include("plugins:image_plugin")
+findProject(":plugins:image_plugin")?.name = "image_plugin"
