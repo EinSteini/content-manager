@@ -31,3 +31,5 @@ include("plugins:generator_gemini_plugin")
 findProject(":plugins:generator_gemini_plugin")?.name = "generator_gemini_plugin"
 include("plugins:bluesky_plugin")
 findProject(":plugins:bluesky_plugin")?.name = "bluesky_plugin"
+include("plugins:image_plugin")
+findProject(":plugins:image_plugin")?.name = "image_plugin"
