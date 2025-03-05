@@ -17,10 +17,7 @@ import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.awt.Desktop
@@ -71,18 +68,20 @@ class ThreadsPlatform(id: UUID?, name: String, private val server: Server, priva
     @Serializable
     data class ShortLivedAccessTokenResponse(val access_token: String, val user_id: String)
 
-    override fun upload(mediaFile: MediaFile, publishParameters: PublishParameters) {
+    override suspend fun upload(mediaFile: MediaFile, publishParameters: PublishParameters) {
         if(!authorized || apiKey == ""){
             throw IllegalStateException("Platform is not authorized")
         }
-        CoroutineScope(Dispatchers.IO).launch {
-            when(mediaFile.filetype){
-                "text/plain" -> uploadText(mediaFile)
-                else -> {
-                    throw IllegalArgumentException("Unsupported media type")
-                }
+        when(mediaFile.filetype){
+            "text/plain" -> uploadText(mediaFile)
+            else -> {
+                throw IllegalArgumentException("Unsupported media type")
             }
         }
+    }
+
+    override fun isDoneInitializing(): Boolean {
+        return this.authorized
     }
 
     private suspend fun uploadText(mediaFile: MediaFile){
@@ -139,17 +138,21 @@ class ThreadsPlatform(id: UUID?, name: String, private val server: Server, priva
         this.authorized = true
     }
 
-    private fun authorize(){
+    private suspend fun authorize(){
         this.authorized = false
         server.registerPlugin(threadsServerPlugin)
         val desktop: Desktop = Desktop.getDesktop()
-        desktop.browse(URI(
-            "https://threads.net/oauth/authorize" +
-                "?client_id=$clientId" +
-                "&redirect_uri=$authAddress" +
-                "&scope=threads_basic,threads_content_publish" +
-                "&response_type=code"
-        ))
+        withContext(Dispatchers.IO) {
+            desktop.browse(
+                URI(
+                    "https://threads.net/oauth/authorize" +
+                            "?client_id=$clientId" +
+                            "&redirect_uri=$authAddress" +
+                            "&scope=threads_basic,threads_content_publish" +
+                            "&response_type=code"
+                )
+            )
+        }
     }
 
     suspend fun receiveAuthKey(key: String) {
@@ -159,9 +162,9 @@ class ThreadsPlatform(id: UUID?, name: String, private val server: Server, priva
         val longLivedToken = exchangeShortLivedTokenForLongLivedToken(shortLivedToken)
 
         authKeyRepository.save(longLivedToken)
-
-        server.unregisterPlugin(threadsServerPlugin)
+        this.apiKey = longLivedToken.key
         this.authorized = true
+        server.unregisterPlugin(threadsServerPlugin)
     }
 
     private suspend fun exchangeCodeForShortLivedToken(code: String): String {

@@ -17,9 +17,6 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.serialization.kotlinx.json.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import java.util.*
 
@@ -45,20 +42,22 @@ class BlueskyPlatform(id: UUID?, name: String) : Platform(id, name) {
         password = dotenv["BSKY_PASSWORD"]
     }
 
-    override fun upload(mediaFile: MediaFile, publishParameters: PublishParameters) {
+    override suspend fun upload(mediaFile: MediaFile, publishParameters: PublishParameters) {
         if(username == "" || password == ""){
             throw IllegalStateException("Bluesky credentials not set")
         }
-        CoroutineScope(Dispatchers.IO).launch {
-            authorize()
-            when(mediaFile.filetype){
-                "text/plain" -> handleTextPost(mediaFile)
-                "image/jpeg"-> handleImagePost(mediaFile, publishParameters)
-                "image/png" -> handleImagePost(mediaFile, publishParameters)
-                "image/multiple" -> handleMultipleImagePost(mediaFile, publishParameters)
-                else -> throw IllegalArgumentException("Unsupported filetype")
-            }
+        authorize()
+        when(mediaFile.filetype){
+            "text/plain" -> handleTextPost(mediaFile)
+            "image/jpeg"-> handleImagePost(mediaFile, publishParameters)
+            "image/png" -> handleImagePost(mediaFile, publishParameters)
+            "image/multiple" -> handleMultipleImagePost(mediaFile, publishParameters)
+            else -> throw IllegalArgumentException("Unsupported filetype")
         }
+    }
+
+    override fun isDoneInitializing(): Boolean {
+        return true
     }
 
 
