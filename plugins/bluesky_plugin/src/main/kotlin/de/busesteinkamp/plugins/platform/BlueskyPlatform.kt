@@ -88,7 +88,7 @@ class BlueskyPlatform(id: UUID?, name: String) : Platform(id, name) {
             setBody(postRequest)
         }
         if(response.status != HttpStatusCode.OK){
-            throw IllegalStateException("Error uploading text file to Threads. Server responded with status ${response.status}: ${response.bodyAsText()}")
+            throw IllegalStateException("Error uploading text file to Bluesky. Server responded with status ${response.status}: ${response.bodyAsText()}")
         }
         println("Text file uploaded to Bluesky")
     }
@@ -143,7 +143,7 @@ class BlueskyPlatform(id: UUID?, name: String) : Platform(id, name) {
         }
 
         if(response.status != HttpStatusCode.OK){
-            throw IllegalStateException("Error uploading image file to Threads. Server responded with status ${response.status}: ${response.bodyAsText()}")
+            throw IllegalStateException("Error uploading image file to Bluesky. Server responded with status ${response.status}: ${response.bodyAsText()}")
         }
         println("Image file uploaded to Bluesky")
 
@@ -173,7 +173,7 @@ class BlueskyPlatform(id: UUID?, name: String) : Platform(id, name) {
         }
 
         if(response.status != HttpStatusCode.OK){
-            throw IllegalStateException("Error creating post with images on Threads. Server responded with status ${response.status}: ${response.bodyAsText()}")
+            throw IllegalStateException("Error creating post with images on Bluesky. Server responded with status ${response.status}: ${response.bodyAsText()}")
         }
     }
 
