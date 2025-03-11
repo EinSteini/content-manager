@@ -24,6 +24,7 @@ dependencies {
     implementation(project(":plugins:ktor_server_plugin"))
     implementation(project(":plugins:sqlite_authkey_storage_plugin"))
     implementation(project(":plugins:generator_gemini_plugin"))
+    implementation(project(":plugins:browser_plugin"))
 }
 
 tasks.test {

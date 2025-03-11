@@ -2,6 +2,7 @@ package de.busesteinkamp
 
 import de.busesteinkamp.application.media.GetMediaFileUseCase
 import de.busesteinkamp.application.process.ExecuteDistributionUseCase
+import de.busesteinkamp.application.utility.OpenUrlInBrowserUseCase
 import de.busesteinkamp.domain.auth.AuthKeyRepository
 import de.busesteinkamp.domain.media.MediaFile
 import de.busesteinkamp.domain.media.MediaFileRepository
@@ -21,6 +22,7 @@ import de.busesteinkamp.plugins.platform.ThreadsPlatform
 import de.busesteinkamp.plugins.process.InMemoryDistributionRepository
 import de.busesteinkamp.plugins.server.KtorServer
 import de.busesteinkamp.plugins.user.InMemoryUserRepository
+import de.busesteinkamp.plugins.utility.DesktopBrowserOpener
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import java.util.*
@@ -37,6 +39,7 @@ fun main(args: Array<String>): Unit = runBlocking {
     val getMediaFileUseCase = GetMediaFileUseCase(mediaFileRepository)
     val server: Server = KtorServer(8443)
     val authKeyRepository: AuthKeyRepository = SqliteAuthKeyRepository()
+    val openUrlInBrowserUseCase = OpenUrlInBrowserUseCase(DesktopBrowserOpener())
 
     val examplePostPath = javaClass.getResource("/example_post.txt")?.path
     if(examplePostPath == null) {
@@ -71,7 +74,7 @@ fun main(args: Array<String>): Unit = runBlocking {
     )
 
     val userId = UUID.randomUUID()
-    val threads: Platform = ThreadsPlatform(UUID.randomUUID(), "Threads", server, authKeyRepository)
+    val threads: Platform = ThreadsPlatform(UUID.randomUUID(), "Threads", server, authKeyRepository, openUrlInBrowserUseCase)
     val bsky: Platform = BlueskyPlatform(UUID.randomUUID(), "Bluesky")
     val mainUser: User = User(UUID.randomUUID(), "main", listOf(threads, bsky))
     platformRepository.save(threads)

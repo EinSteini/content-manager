@@ -3,6 +3,7 @@ package de.busesteinkamp
 import de.busesteinkamp.application.generate.GenerateTextPostUseCase
 import de.busesteinkamp.application.generate.TextPostGenerator
 import de.busesteinkamp.application.process.ExecuteDistributionUseCase
+import de.busesteinkamp.application.utility.OpenUrlInBrowserUseCase
 import de.busesteinkamp.domain.auth.AuthKeyRepository
 import de.busesteinkamp.domain.generator.GenAIService
 import de.busesteinkamp.domain.generator.Generator
@@ -21,6 +22,7 @@ import de.busesteinkamp.plugins.media.TxtFile
 import de.busesteinkamp.plugins.platform.ThreadsPlatform
 import de.busesteinkamp.plugins.process.InMemoryDistributionRepository
 import de.busesteinkamp.plugins.server.KtorServer
+import de.busesteinkamp.plugins.utility.DesktopBrowserOpener
 import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.io.IOException
@@ -46,6 +48,8 @@ fun main(): Unit = runBlocking {
     val textPostGenerator: Generator = TextPostGenerator(genAIService = genAIService)
     val generateTextPostUseCase = GenerateTextPostUseCase(textPostGenerator)
 
+    val openUrlInBrowserUseCase = OpenUrlInBrowserUseCase(DesktopBrowserOpener())
+
     val textContent = generateTextPostUseCase.execute(
         input = "Programmierung"
     )
@@ -65,7 +69,7 @@ fun main(): Unit = runBlocking {
     )
     println(mediaFile.toString())
 
-    val threads: Platform = ThreadsPlatform(UUID.randomUUID(), "Threads", server, authKeyRepository)
+    val threads: Platform = ThreadsPlatform(UUID.randomUUID(), "Threads", server, authKeyRepository, openUrlInBrowserUseCase)
     val mainUser = User(UUID.randomUUID(), "main", listOf(threads))
     platformRepository.save(threads)
     val publishParameters = PublishParameters()

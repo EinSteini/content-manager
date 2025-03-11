@@ -1,5 +1,6 @@
 package de.busesteinkamp.plugins.platform
 
+import de.busesteinkamp.application.utility.OpenUrlInBrowserUseCase
 import de.busesteinkamp.domain.auth.AuthKey
 import de.busesteinkamp.domain.auth.AuthKeyRepository
 import de.busesteinkamp.domain.media.MediaFile
@@ -24,7 +25,7 @@ import java.awt.Desktop
 import java.net.URI
 import java.util.*
 
-class ThreadsPlatform(id: UUID?, name: String, private val server: Server, private val authKeyRepository: AuthKeyRepository) : Platform(id, name) {
+class ThreadsPlatform(id: UUID?, name: String, private val server: Server, private val authKeyRepository: AuthKeyRepository, private val openUrlInBrowserUseCase: OpenUrlInBrowserUseCase) : Platform(id, name) {
 
     private var authorized = false
 
@@ -141,17 +142,14 @@ class ThreadsPlatform(id: UUID?, name: String, private val server: Server, priva
     private suspend fun authorize(){
         this.authorized = false
         server.registerPlugin(threadsServerPlugin)
-        val desktop: Desktop = Desktop.getDesktop()
         withContext(Dispatchers.IO) {
-            desktop.browse(
-                URI(
+            openUrlInBrowserUseCase.execute(
                     "https://threads.net/oauth/authorize" +
                             "?client_id=$clientId" +
                             "&redirect_uri=$authAddress" +
                             "&scope=threads_basic,threads_content_publish" +
                             "&response_type=code"
                 )
-            )
         }
     }
 
