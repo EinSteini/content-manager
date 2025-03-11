@@ -33,3 +33,5 @@ include("plugins:bluesky_plugin")
 findProject(":plugins:bluesky_plugin")?.name = "bluesky_plugin"
 include("plugins:image_plugin")
 findProject(":plugins:image_plugin")?.name = "image_plugin"
+include("plugins:browser_plugin")
+findProject(":plugins:browser_plugin")?.name = "browser_plugin"
