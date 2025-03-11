@@ -1,6 +1,7 @@
 package de.busesteinkamp.plugins.platform
 
 import de.busesteinkamp.domain.media.MediaFile
+import de.busesteinkamp.domain.media.MediaType
 import de.busesteinkamp.domain.platform.Platform
 import de.busesteinkamp.domain.platform.PublishParameters
 import de.busesteinkamp.plugins.data.*
@@ -48,10 +49,10 @@ class BlueskyPlatform(id: UUID?, name: String) : Platform(id, name) {
         }
         authorize()
         when(mediaFile.filetype){
-            "text/plain" -> handleTextPost(mediaFile)
-            "image/jpeg"-> handleImagePost(mediaFile, publishParameters)
-            "image/png" -> handleImagePost(mediaFile, publishParameters)
-            "image/multiple" -> handleMultipleImagePost(mediaFile, publishParameters)
+            MediaType.TEXT_PLAIN -> handleTextPost(mediaFile)
+            MediaType.IMAGE_JPEG-> handleImagePost(mediaFile, publishParameters)
+            MediaType.IMAGE_PNG -> handleImagePost(mediaFile, publishParameters)
+            MediaType.IMAGE_MULTIPLE -> handleMultipleImagePost(mediaFile, publishParameters)
             else -> throw IllegalArgumentException("Unsupported filetype")
         }
     }
@@ -138,7 +139,7 @@ class BlueskyPlatform(id: UUID?, name: String) : Platform(id, name) {
 
         val response = client.post("https://bsky.social/xrpc/com.atproto.repo.uploadBlob") {
             bearerAuth(authToken)
-            setBody(ByteArrayContent(imageFile.fileContent, contentType = ContentType.parse(imageFile.filetype)))
+            setBody(ByteArrayContent(imageFile.fileContent, contentType = ContentType.parse(imageFile.filetype.name)))
         }
 
         if(response.status != HttpStatusCode.OK){

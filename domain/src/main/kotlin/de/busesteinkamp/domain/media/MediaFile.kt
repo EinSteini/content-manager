@@ -6,7 +6,7 @@ import java.util.UUID
 abstract class MediaFile(
     var id: UUID? = UUID.randomUUID(),
     var filename: String,
-    var filetype: String,
+    var filetype: MediaType,
     var fileSize: Long,
 ) {
     override fun toString(): String {
