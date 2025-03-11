@@ -1,6 +1,7 @@
 package de.busesteinkamp.plugins.media
 
 import de.busesteinkamp.domain.media.MediaFile
+import de.busesteinkamp.domain.media.MediaType
 import java.util.*
 
 class MultipleImageFiles : MediaFile {
@@ -18,7 +19,7 @@ class MultipleImageFiles : MediaFile {
         this.loadFile()
     }
 
-    private constructor(id: UUID?) : super(id, "multiple_images", "image/multiple", 0)
+    private constructor(id: UUID?) : super(id, "multiple_images", MediaType.IMAGE_MULTIPLE, 0)
 
     private var imagePaths: List<String> = emptyList()
     private var altTexts: List<String> = emptyList()

@@ -3,6 +3,7 @@ package de.busesteinkamp.plugins.platform
 import de.busesteinkamp.domain.auth.AuthKey
 import de.busesteinkamp.domain.auth.AuthKeyRepository
 import de.busesteinkamp.domain.media.MediaFile
+import de.busesteinkamp.domain.media.MediaType
 import de.busesteinkamp.domain.platform.Platform
 import de.busesteinkamp.domain.platform.PublishParameters
 import de.busesteinkamp.domain.server.Server
@@ -73,7 +74,7 @@ class ThreadsPlatform(id: UUID?, name: String, private val server: Server, priva
             throw IllegalStateException("Platform is not authorized")
         }
         when(mediaFile.filetype){
-            "text/plain" -> uploadText(mediaFile)
+            MediaType.TEXT_PLAIN -> uploadText(mediaFile)
             else -> {
                 throw IllegalArgumentException("Unsupported media type")
             }
