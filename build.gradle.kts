@@ -30,6 +30,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2")
     implementation("org.xerial:sqlite-jdbc:3.45.1.0")
     implementation("io.github.cdimascio:dotenv-kotlin:6.5.1")
+    implementation("com.github.scribejava:scribejava-apis:8.3.3")
 }
 
 tasks.test {

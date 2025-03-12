@@ -17,7 +17,12 @@ class TxtFile(id: UUID?, filename: String, fileSize: Long) : MediaFile(
         this.loadFile()
     }
 
+    constructor(id: UUID?, content: String): this(id, "fromString", content.length.toLong()){
+        textContent = content
+    }
+
     override fun loadFile() {
+        if(filename == "fromString") return
         textContent = java.io.File(filename).readText()
         fileSize = textContent.length.toLong()
     }

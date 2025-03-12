@@ -19,6 +19,7 @@ import de.busesteinkamp.plugins.auth.SqliteAuthKeyRepository
 import de.busesteinkamp.plugins.media.*
 import de.busesteinkamp.plugins.platform.BlueskyPlatform
 import de.busesteinkamp.plugins.platform.ThreadsPlatform
+import de.busesteinkamp.plugins.platform.TwitterPlatform
 import de.busesteinkamp.plugins.process.InMemoryDistributionRepository
 import de.busesteinkamp.plugins.server.KtorServer
 import de.busesteinkamp.plugins.user.InMemoryUserRepository
@@ -76,13 +77,14 @@ fun main(args: Array<String>): Unit = runBlocking {
     val userId = UUID.randomUUID()
     val threads: Platform = ThreadsPlatform(UUID.randomUUID(), "Threads", server, authKeyRepository, openUrlInBrowserUseCase)
     val bsky: Platform = BlueskyPlatform(UUID.randomUUID(), "Bluesky")
-    val mainUser: User = User(UUID.randomUUID(), "main", listOf(threads, bsky))
+    val twitter: Platform = TwitterPlatform(UUID.randomUUID(), "Twitter", authKeyRepository)
+    val mainUser: User = User(UUID.randomUUID(), "main", listOf(twitter))
     platformRepository.save(threads)
     val publishParameters: PublishParameters = PublishParameters()
     publishParameters.title = "Und sogar bis zu 4 Bilder klappen!"
 
     val distribution = Distribution(
-        mediaFile = mediaFile,
+        mediaFile = TxtFile(UUID.randomUUID(), "Hallo Welt"),
         publishParameters = publishParameters,
         platforms = mainUser.platforms
     )
