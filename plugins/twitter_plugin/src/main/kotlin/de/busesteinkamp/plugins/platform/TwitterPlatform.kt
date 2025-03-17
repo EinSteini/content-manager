@@ -1,19 +1,16 @@
 package de.busesteinkamp.plugins.platform
 
-import com.github.scribejava.apis.TwitterApi
-import com.github.scribejava.core.builder.ServiceBuilder
-import com.github.scribejava.core.model.OAuth1AccessToken
-import com.github.scribejava.core.model.OAuthRequest
-import com.github.scribejava.core.model.Verb
-import com.github.scribejava.core.oauth.OAuth10aService
+import de.busesteinkamp.application.utility.OpenUrlInBrowserUseCase
 import de.busesteinkamp.domain.auth.AuthKey
 import de.busesteinkamp.domain.auth.AuthKeyRepository
 import de.busesteinkamp.domain.media.MediaFile
 import de.busesteinkamp.domain.media.MediaType
 import de.busesteinkamp.domain.platform.Platform
 import de.busesteinkamp.domain.platform.PublishParameters
+import de.busesteinkamp.domain.server.Server
 import de.busesteinkamp.plugins.data.TwitterApiTweetResponse
 import de.busesteinkamp.plugins.media.TxtFile
+import de.busesteinkamp.plugins.server.TwitterServerPlugin
 import io.github.cdimascio.dotenv.dotenv
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -24,10 +21,18 @@ import io.ktor.client.request.forms.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import java.security.MessageDigest
 import java.util.*
 
-class TwitterPlatform(id: UUID?, name: String, private val authKeyRepository: AuthKeyRepository) : Platform(id, name) {
+class TwitterPlatform(id: UUID?, name: String, private val server: Server, private val authKeyRepository: AuthKeyRepository, private val openUrlInBrowserUseCase: OpenUrlInBrowserUseCase) : Platform(id, name) {
+
+    private var authorized = false
 
     private val client: HttpClient = HttpClient(CIO){
         install(ContentNegotiation) {
@@ -38,25 +43,43 @@ class TwitterPlatform(id: UUID?, name: String, private val authKeyRepository: Au
         }
     }
 
-    private val apiKey: String
-    private val apiSecret: String
+    private val authPath = "/auth/twitter"
+    private val authAddress = server.getAddress() + authPath
 
-    private lateinit var accessToken: OAuth1AccessToken
+    private val codeVerifier = generateCodeVerifier()
 
-    private val service: OAuth10aService
+    private val twitterServerPlugin = TwitterServerPlugin(this, authPath)
+
+    private val clientId: String
+    private val clientSecret: String
+
+    private lateinit var apiKey: String
+    private lateinit var refreshToken: String
+
+    @Serializable
+    private data class MediaContainerResponse(val id: String)
+
+    @Serializable
+    data class LongLivedAccessTokenResponse(val access_token: String, val token_type: String, val expires_in: Int)
+
+    @Serializable
+    data class ShortLivedAccessTokenResponse(val access_token: String, val refresh_token: String, val expires_in: Int)
+
 
     init {
         val dotenv = dotenv()
-        apiKey = dotenv["X_API_KEY"]
-        apiSecret = dotenv["X_API_KEY_SECRET"]
+        clientId = dotenv["X_API_CLIENT_ID"]
+        clientSecret = dotenv["X_API_CLIENT_SECRET"]
 
-        service = ServiceBuilder(apiKey)
-            .apiSecret(apiSecret)
-            .callback("oob")
-            .build(TwitterApi.instance())
+        if(clientId == "" || clientSecret == ""){
+            throw IllegalStateException("API key or secret not found in .env file")
+        }
 
         val key = authKeyRepository.find(name)
-        testKey(key)
+
+        CoroutineScope(Dispatchers.IO).launch {
+            testKey(key)
+        }
     }
 
     override suspend fun upload(mediaFile: MediaFile, publishParameters: PublishParameters) {
@@ -70,71 +93,22 @@ class TwitterPlatform(id: UUID?, name: String, private val authKeyRepository: Au
     }
 
     override fun isDoneInitializing(): Boolean {
-        return this::accessToken.isInitialized
-    }
-
-    private fun testKey(key: AuthKey?){
-        if (key == null || key.expiresAt.before(Date())) {
-            authorize()
-            authKeyRepository.save(AuthKey(name, encodeOAuthToken(accessToken), Date(), Date.from(Date().toInstant().plusSeconds(60*60*24*365*10))))
-        } else {
-            accessToken = decodeOAuthToken(key.key)
-        }
-    }
-
-    private fun authorize(){
-        val requestToken = service.requestToken
-        println("Go to this URL and authorize the app: ${service.getAuthorizationUrl(requestToken)}")
-
-        print("Enter the PIN: ")
-        val scanner = Scanner(System.`in`)
-        val pin = scanner.nextLine()
-
-        val token = service.getAccessToken(requestToken, pin)
-        accessToken = token
-        println("Access token: $accessToken")
-    }
-
-    fun signRequest(url: String, method: Verb, jsonBody: String? = null): String {
-        val request = OAuthRequest(method, url)
-
-        // Add required headers
-        request.addHeader("Content-Type", "application/json")
-
-        // If it's a POST request, set the JSON body
-        if (method == Verb.POST && jsonBody != null) {
-            request.setPayload(jsonBody)
-        }
-
-        // Sign the request using OAuth1
-        service.signRequest(accessToken, request)
-
-        // Return the Authorization header
-        return request.getHeaders()["Authorization"] ?: throw Exception("Failed to sign request")
+        return this.authorized
     }
 
     private suspend fun handleTextUpload(mediaFile: MediaFile, publishParameters: PublishParameters){
         val textFile = mediaFile as TxtFile
         val url = "https://api.twitter.com/2/tweets"
 
-        // Convert to proper JSON string
-        val bodyJson = """{"text": "${textFile.textContent}"}"""
-
-        // Sign the request with the JSON body
-        val authorization = signRequest(url, Verb.POST, bodyJson)
-
         val response = client.post(url) {
             headers {
+                append(HttpHeaders.Authorization, "Bearer $apiKey")
                 append(HttpHeaders.ContentType, ContentType.Application.Json)
-                append(HttpHeaders.Authorization, authorization) // ✅ Correct Authorization header
             }
-            setBody(bodyJson) // ✅ Properly formatted JSON body
+            setBody("{\"text\": \"${textFile.textContent}\"}")
         }
 
-        println("Response: ${response.status}")
-        println("Body: ${response.bodyAsText()}")
-
-        if (response.status != HttpStatusCode.OK) {
+        if (response.status != HttpStatusCode.Created) {
             throw IllegalStateException("Error uploading text file to Twitter. Server responded with status ${response.status}")
         }
 
@@ -142,13 +116,131 @@ class TwitterPlatform(id: UUID?, name: String, private val authKeyRepository: Au
         println("Uploaded text file to Twitter. Tweet ID: ${res.data.id}")
     }
 
-    private fun encodeOAuthToken(accessToken: OAuth1AccessToken): String {
-        return "${accessToken.token}:${accessToken.tokenSecret}"
+    private suspend fun testKey(key: AuthKey?){
+        if(key != null){
+            // todo: check if key is working
+            if(key.expiresAt < Date()){
+                authKeyRepository.delete(name)
+                authorize()
+                return
+            }
+        } else {
+            authorize()
+            return
+        }
+
+        // If key is older than 24 hours, refresh it
+        if(key.createdAt.time < Date().time - 1000 * 60 * 60 * 24){
+            val refreshedKey = refreshAccessToken(key.key)
+            authKeyRepository.update(refreshedKey)
+        }
+
+        this.apiKey = key.key.split(":")[0]
+        this.authorized = true
     }
 
-    private fun decodeOAuthToken(encodedToken: String): OAuth1AccessToken {
-        val parts = encodedToken.split(":")
-        return OAuth1AccessToken(parts[0], parts[1])
+    private suspend fun authorize(){
+        this.authorized = false
+        server.registerPlugin(twitterServerPlugin)
+
+        val stateString = UUID.randomUUID().toString()
+        val codeChallenge = generateCodeChallenge(codeVerifier)
+
+        withContext(Dispatchers.IO) {
+            openUrlInBrowserUseCase.execute(
+                "https://twitter.com/i/oauth2/authorize" +
+                        "?client_id=$clientId" +
+                        "&redirect_uri=$authAddress" +
+                        "&scope=tweet.read%20tweet.write%20offline.access%20users.read" +
+                        "&response_type=code" +
+                        "&state=$stateString" +
+                        "&code_challenge=$codeChallenge" +
+                        "&code_challenge_method=S256"
+            )
+        }
     }
 
+    private fun generateCodeVerifier(): String {
+        val bytes = ByteArray(32)
+        Random().nextBytes(bytes)
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)
+    }
+
+    private fun generateCodeChallenge(verifier: String): String {
+        val bytes = MessageDigest.getInstance("SHA-256").digest(verifier.toByteArray())
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)
+    }
+
+    suspend fun receiveAuthKey(authKey: String){
+        println("Received auth key: $authKey") // Totally safe and data compliant
+
+        val shortLivedToken = exchangeCodeForShortLivedToken(authKey)
+
+        authKeyRepository.save(shortLivedToken)
+        this.apiKey = shortLivedToken.key.split(":")[0]
+        this.authorized = true
+        server.unregisterPlugin(twitterServerPlugin)
+    }
+
+
+    private suspend fun exchangeCodeForShortLivedToken(code: String): AuthKey {
+        val credentials = "$clientId:$clientSecret"
+        val base64Credentials = Base64.getEncoder().encodeToString(credentials.toByteArray())
+
+        val response = client.post("https://api.twitter.com/2/oauth2/token") {
+            headers {
+                append(HttpHeaders.Authorization, "Basic $base64Credentials")
+            }
+            setBody(FormDataContent(Parameters.build {
+                append("code", code)
+                append("grant_type", "authorization_code")
+                append("redirect_uri", authAddress)
+                append("code_verifier", codeVerifier)
+            }))
+        }
+
+        if(response.status != HttpStatusCode.OK){
+            throw IllegalStateException("Error exchanging code for short lived token. Server responded with status ${response.status}")
+        }
+
+        val accessTokenResponse: ShortLivedAccessTokenResponse = response.body()
+        println("Received short lived access token: ${accessTokenResponse.access_token}")
+        return AuthKey(name, encodeToken(accessTokenResponse.access_token, accessTokenResponse.refresh_token), Date(), Date(Date().time + accessTokenResponse.expires_in * 1000))
+    }
+
+    private suspend fun refreshAccessToken(refreshToken: String): AuthKey{
+        val credentials = "$clientId:$clientSecret"
+        val base64Credentials = Base64.getEncoder().encodeToString(credentials.toByteArray())
+
+        val response = client.post("https://api.twitter.com/2/oauth2/token"){
+            headers {
+                append(HttpHeaders.Authorization, "Basic $base64Credentials")
+                append(HttpHeaders.ContentType, ContentType.Application.FormUrlEncoded.toString())
+            }
+            setBody(FormDataContent(Parameters.build {
+                append("client_id", clientId)
+                append("client_secret", clientSecret)
+                append("refresh_token", refreshToken)
+                append("grant_type", "refresh_token")
+            }))
+        }
+
+        if(response.status != HttpStatusCode.OK){
+            throw IllegalStateException("Error refreshing access token. Server responded with status ${response.status}")
+        }
+
+        val accessTokenResponse: LongLivedAccessTokenResponse = response.body()
+        println("Received long lived access token: ${accessTokenResponse.access_token}")
+        val authKey = AuthKey(name, accessTokenResponse.access_token, Date(), Date(Date().time + accessTokenResponse.expires_in * 1000))
+        return authKey
+    }
+
+    private fun encodeToken(key: String, refresh: String): String {
+        return "$key:$refresh"
+    }
+
+    private fun decodeToken(key: String): Pair<String, String> {
+        val split = key.split(":")
+        return Pair(split[0], split[1])
+    }
 }

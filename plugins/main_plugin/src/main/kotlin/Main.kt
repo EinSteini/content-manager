@@ -77,14 +77,14 @@ fun main(args: Array<String>): Unit = runBlocking {
     val userId = UUID.randomUUID()
     val threads: Platform = ThreadsPlatform(UUID.randomUUID(), "Threads", server, authKeyRepository, openUrlInBrowserUseCase)
     val bsky: Platform = BlueskyPlatform(UUID.randomUUID(), "Bluesky")
-    val twitter: Platform = TwitterPlatform(UUID.randomUUID(), "Twitter", authKeyRepository)
+    val twitter: Platform = TwitterPlatform(UUID.randomUUID(), "Twitter", server, authKeyRepository, openUrlInBrowserUseCase)
     val mainUser: User = User(UUID.randomUUID(), "main", listOf(twitter))
     platformRepository.save(threads)
     val publishParameters: PublishParameters = PublishParameters()
     publishParameters.title = "Und sogar bis zu 4 Bilder klappen!"
 
     val distribution = Distribution(
-        mediaFile = TxtFile(UUID.randomUUID(), "Hallo Welt"),
+        mediaFile = TxtFile(UUID.randomUUID(), "Tweet with API!"),
         publishParameters = publishParameters,
         platforms = mainUser.platforms
     )
