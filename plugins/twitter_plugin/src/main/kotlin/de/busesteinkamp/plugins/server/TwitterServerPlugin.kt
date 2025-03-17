@@ -2,11 +2,12 @@ package de.busesteinkamp.plugins.server
 
 import de.busesteinkamp.domain.server.Server
 import de.busesteinkamp.domain.server.ServerPlugin
-import de.busesteinkamp.plugins.platform.ThreadsPlatform
+import de.busesteinkamp.plugins.platform.TwitterPlatform
 import io.ktor.http.*
 import io.ktor.server.response.*
+import kotlin.math.atan
 
-class ThreadsServerPlugin(private val platform: ThreadsPlatform, private val path: String) : ServerPlugin {
+class TwitterServerPlugin(private val platform: TwitterPlatform, private val path: String) : ServerPlugin {
 
     override fun onLoad(server: Server) {
         server.addRoute(KtorRouteDefinition(path, HttpMethod.Get, {

@@ -35,3 +35,5 @@ include("plugins:image_plugin")
 findProject(":plugins:image_plugin")?.name = "image_plugin"
 include("plugins:browser_plugin")
 findProject(":plugins:browser_plugin")?.name = "browser_plugin"
+include("plugins:twitter_plugin")
+findProject(":plugins:twitter_plugin")?.name = "twitter_plugin"
