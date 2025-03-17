@@ -139,7 +139,7 @@ class BlueskyPlatform(id: UUID?, name: String) : Platform(id, name) {
 
         val response = client.post("https://bsky.social/xrpc/com.atproto.repo.uploadBlob") {
             bearerAuth(authToken)
-            setBody(ByteArrayContent(imageFile.fileContent, contentType = ContentType.parse(imageFile.filetype.name)))
+            setBody(ByteArrayContent(imageFile.fileContent, contentType = ContentType.parse(imageFile.filetype.text)))
         }
 
         if(response.status != HttpStatusCode.OK){

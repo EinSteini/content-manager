@@ -1,6 +1,6 @@
 package de.busesteinkamp.domain.media
 
-enum class MediaType(name: String) {
+enum class MediaType(val text: String) {
     TEXT_PLAIN("text/plain"),
     IMAGE_JPEG("image/jpeg"),
     IMAGE_PNG("image/png"),
