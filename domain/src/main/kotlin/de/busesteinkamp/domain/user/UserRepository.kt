@@ -7,4 +7,5 @@ interface UserRepository {
     fun save(user: User): User
     fun update(user: User)
     fun delete(id: UUID)
+    fun findAll(): List<User>
 }
