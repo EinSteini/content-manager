@@ -21,3 +21,9 @@ data class TwitterApiError(
     val title: String,
     val type: String
 )
+
+@Serializable
+data class LongLivedAccessTokenResponse(val access_token: String, val token_type: String, val expires_in: Int)
+
+@Serializable
+data class ShortLivedAccessTokenResponse(val access_token: String, val refresh_token: String, val expires_in: Int)

@@ -8,6 +8,8 @@ import de.busesteinkamp.domain.media.MediaType
 import de.busesteinkamp.domain.platform.Platform
 import de.busesteinkamp.domain.platform.PublishParameters
 import de.busesteinkamp.domain.server.Server
+import de.busesteinkamp.plugins.data.LongLivedAccessTokenResponse
+import de.busesteinkamp.plugins.data.ShortLivedAccessTokenResponse
 import de.busesteinkamp.plugins.data.TwitterApiTweetResponse
 import de.busesteinkamp.plugins.media.TxtFile
 import de.busesteinkamp.plugins.server.TwitterServerPlugin
@@ -55,16 +57,6 @@ class TwitterPlatform(id: UUID?, name: String, private val server: Server, priva
 
     private lateinit var apiKey: String
     private lateinit var refreshToken: String
-
-    @Serializable
-    private data class MediaContainerResponse(val id: String)
-
-    @Serializable
-    data class LongLivedAccessTokenResponse(val access_token: String, val token_type: String, val expires_in: Int)
-
-    @Serializable
-    data class ShortLivedAccessTokenResponse(val access_token: String, val refresh_token: String, val expires_in: Int)
-
 
     init {
         val dotenv = dotenv()
