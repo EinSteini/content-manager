@@ -1,6 +1,6 @@
 package de.busesteinkamp.plugins.platform
 
-import de.busesteinkamp.application.utility.OpenUrlInBrowserUseCase
+import de.busesteinkamp.application.process.OpenUrlUseCase
 import de.busesteinkamp.domain.auth.AuthKey
 import de.busesteinkamp.domain.auth.AuthKeyRepository
 import de.busesteinkamp.domain.auth.EnvRetriever
@@ -11,7 +11,6 @@ import de.busesteinkamp.domain.platform.PublishParameters
 import de.busesteinkamp.domain.server.Server
 import de.busesteinkamp.plugins.media.TxtFile
 import de.busesteinkamp.plugins.server.ThreadsServerPlugin
-import io.github.cdimascio.dotenv.dotenv
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
@@ -23,11 +22,9 @@ import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import java.awt.Desktop
-import java.net.URI
 import java.util.*
 
-class ThreadsPlatform(id: UUID?, name: String, private val server: Server, private val authKeyRepository: AuthKeyRepository, private val openUrlInBrowserUseCase: OpenUrlInBrowserUseCase, private val envRetriever: EnvRetriever) : Platform(id, name) {
+class ThreadsPlatform(id: UUID?, name: String, private val server: Server, private val authKeyRepository: AuthKeyRepository, private val openUrlUseCase: OpenUrlUseCase, private val envRetriever: EnvRetriever) : Platform(id, name) {
 
     private var authorized = false
 
@@ -144,7 +141,7 @@ class ThreadsPlatform(id: UUID?, name: String, private val server: Server, priva
         this.authorized = false
         server.registerPlugin(threadsServerPlugin)
         withContext(Dispatchers.IO) {
-            openUrlInBrowserUseCase.execute(
+            openUrlUseCase.execute(
                     "https://threads.net/oauth/authorize" +
                             "?client_id=$clientId" +
                             "&redirect_uri=$authAddress" +

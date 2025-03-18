@@ -1,6 +1,6 @@
 package de.busesteinkamp.plugins.platform
 
-import de.busesteinkamp.application.utility.OpenUrlInBrowserUseCase
+import de.busesteinkamp.application.process.OpenUrlUseCase
 import de.busesteinkamp.domain.auth.AuthKey
 import de.busesteinkamp.domain.auth.AuthKeyRepository
 import de.busesteinkamp.domain.auth.EnvRetriever
@@ -30,7 +30,7 @@ import kotlinx.serialization.json.Json
 import java.security.MessageDigest
 import java.util.*
 
-class TwitterPlatform(id: UUID?, name: String, private val server: Server, private val authKeyRepository: AuthKeyRepository, private val openUrlInBrowserUseCase: OpenUrlInBrowserUseCase, private val envRetriever: EnvRetriever) : Platform(id, name) {
+class TwitterPlatform(id: UUID?, name: String, private val server: Server, private val authKeyRepository: AuthKeyRepository, private val openUrlUseCase: OpenUrlUseCase, private val envRetriever: EnvRetriever) : Platform(id, name) {
 
     private var authorized = false
 
@@ -136,7 +136,7 @@ class TwitterPlatform(id: UUID?, name: String, private val server: Server, priva
         val codeChallenge = generateCodeChallenge(codeVerifier)
 
         withContext(Dispatchers.IO) {
-            openUrlInBrowserUseCase.execute(
+            openUrlUseCase.execute(
                 "https://twitter.com/i/oauth2/authorize" +
                         "?client_id=$clientId" +
                         "&redirect_uri=$authAddress" +

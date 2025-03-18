@@ -3,7 +3,7 @@ package de.busesteinkamp
 import de.busesteinkamp.application.generate.GenerateTextPostUseCase
 import de.busesteinkamp.application.generate.TextPostGenerator
 import de.busesteinkamp.application.process.ExecuteDistributionUseCase
-import de.busesteinkamp.application.utility.OpenUrlInBrowserUseCase
+import de.busesteinkamp.application.process.OpenUrlUseCase
 import de.busesteinkamp.domain.auth.AuthKeyRepository
 import de.busesteinkamp.domain.generator.GenAIService
 import de.busesteinkamp.domain.generator.Generator
@@ -49,7 +49,7 @@ fun main(): Unit = runBlocking {
     val textPostGenerator: Generator = TextPostGenerator(genAIService = genAIService)
     val generateTextPostUseCase = GenerateTextPostUseCase(textPostGenerator)
 
-    val openUrlInBrowserUseCase = OpenUrlInBrowserUseCase(DesktopBrowserOpener())
+    val openUrlUseCase = OpenUrlUseCase(false, DesktopBrowserOpener())
     val dotenv = DotenvPlugin()
 
     val textContent = generateTextPostUseCase.execute(
@@ -71,7 +71,7 @@ fun main(): Unit = runBlocking {
     )
     println(mediaFile.toString())
 
-    val threads: Platform = ThreadsPlatform(UUID.randomUUID(), "Threads", server, authKeyRepository, openUrlInBrowserUseCase, dotenv)
+    val threads: Platform = ThreadsPlatform(UUID.randomUUID(), "Threads", server, authKeyRepository, openUrlUseCase, dotenv)
     val mainUser = User(UUID.randomUUID(), "main", listOf(threads))
     platformRepository.save(threads)
     val publishParameters = PublishParameters()
