@@ -29,4 +29,8 @@ class InMemoryUserRepository : UserRepository {
     override fun delete(id: UUID) {
         users.removeIf { it.id == id }
     }
+
+    override fun findAll(): List<User> {
+        return users.toList()
+    }
 }

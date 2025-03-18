@@ -11,12 +11,13 @@ class TextPostGenerator(private val genAIService: GenAIService) : Generator {
 
             Der Nutzer gibt dir ein Thema vor (z.B. "Programmierung").
             
-            Deine Aufgabe ist es, genau einen kurzen, lustigen Text für einen Social-Media-Post zu generieren.
+            Deine Aufgabe ist es, genau einen kurzen, lustigen Text für einen Social-Media-Post zu generieren. Der soll ein wenig ketzerisch sein und eine gewisse Nische etwas triggern.
             
             Der Text muss:
-            
+            * zwischen 100-150 Zeichen beinhalten
             * humorvoll und unterhaltsam sein
-            * kurz und prägnant sein (ideal für schnelle Social-Media-Konsum)
+            * prägnant sein (ideal für schnelle Social-Media-Konsum)
+            * keine direkten Beleidigungen beinhalten
             * relevante Hashtags am Ende des Textes enthalten, die zum Thema passen.
             * Keine Anführungszeichen, eckigen Klammern, Zeilenumbrüche oder zusätzlichen Formatierungen enthalten. Nur den reinen Text selbst liefern.
             * Es gibt keine zusätzlichen Erklärungen oder einleitende Sätze, nur den Text inklusive Hashtags.
