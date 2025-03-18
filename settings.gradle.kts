@@ -37,3 +37,5 @@ include("plugins:browser_plugin")
 findProject(":plugins:browser_plugin")?.name = "browser_plugin"
 include("plugins:twitter_plugin")
 findProject(":plugins:twitter_plugin")?.name = "twitter_plugin"
+include("plugins:dotenv_plugin")
+findProject(":plugins:dotenv_plugin")?.name = "dotenv_plugin"

@@ -3,6 +3,7 @@ package de.busesteinkamp.plugins.platform
 import de.busesteinkamp.application.utility.OpenUrlInBrowserUseCase
 import de.busesteinkamp.domain.auth.AuthKey
 import de.busesteinkamp.domain.auth.AuthKeyRepository
+import de.busesteinkamp.domain.auth.EnvRetriever
 import de.busesteinkamp.domain.media.MediaFile
 import de.busesteinkamp.domain.media.MediaType
 import de.busesteinkamp.domain.platform.Platform
@@ -26,7 +27,7 @@ import java.awt.Desktop
 import java.net.URI
 import java.util.*
 
-class ThreadsPlatform(id: UUID?, name: String, private val server: Server, private val authKeyRepository: AuthKeyRepository, private val openUrlInBrowserUseCase: OpenUrlInBrowserUseCase) : Platform(id, name) {
+class ThreadsPlatform(id: UUID?, name: String, private val server: Server, private val authKeyRepository: AuthKeyRepository, private val openUrlInBrowserUseCase: OpenUrlInBrowserUseCase, private val envRetriever: EnvRetriever) : Platform(id, name) {
 
     private var authorized = false
 
@@ -50,9 +51,8 @@ class ThreadsPlatform(id: UUID?, name: String, private val server: Server, priva
     private lateinit var apiKey: String
 
     init {
-        val dotenv = dotenv()
-        clientId = dotenv["THREADS_APP_CLIENT_ID"]
-        clientSecret = dotenv["THREADS_APP_CLIENT_SECRET"]
+        clientId = envRetriever.getEnvVariable("THREADS_APP_CLIENT_ID")
+        clientSecret = envRetriever.getEnvVariable("THREADS_APP_CLIENT_SECRET")
 
         val key = authKeyRepository.find(name)
 

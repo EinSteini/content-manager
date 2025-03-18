@@ -17,6 +17,7 @@ import de.busesteinkamp.domain.process.DistributionRepository
 import de.busesteinkamp.domain.server.Server
 import de.busesteinkamp.domain.user.User
 import de.busesteinkamp.domain.user.UserRepository
+import de.busesteinkamp.plugins.auth.DotenvPlugin
 import de.busesteinkamp.plugins.auth.SqliteAuthKeyRepository
 import de.busesteinkamp.plugins.client.GeminiClient
 import de.busesteinkamp.plugins.media.*
@@ -62,12 +63,13 @@ class TerminalMain {
     private val genAIService: GenAIService = GeminiClient()
     private val textPostGenerator: Generator = TextPostGenerator(genAIService = genAIService)
     private val generateTextPostUseCase = GenerateTextPostUseCase(textPostGenerator)
+    private val envRetriever = DotenvPlugin()
 
     // List of available platform factories for creating platform instances
     private val availablePlatformFactories = listOf(
-        "Twitter" to { id: UUID -> TwitterPlatform(id, "Twitter", server, authKeyRepository, openUrlInBrowserUseCase) },
-        "Bluesky" to { id: UUID -> BlueskyPlatform(id, "Bluesky") },
-        "Threads" to { id: UUID -> ThreadsPlatform(id, "Threads", server, authKeyRepository, openUrlInBrowserUseCase) }
+        "Twitter" to { id: UUID -> TwitterPlatform(id, "Twitter", server, authKeyRepository, openUrlInBrowserUseCase, envRetriever) },
+        "Bluesky" to { id: UUID -> BlueskyPlatform(id, "Bluesky", envRetriever) },
+        "Threads" to { id: UUID -> ThreadsPlatform(id, "Threads", server, authKeyRepository, openUrlInBrowserUseCase, envRetriever) }
     )
 
     // Currently selected user preset

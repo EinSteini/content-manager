@@ -15,6 +15,7 @@ import de.busesteinkamp.domain.process.UploadStatus
 import de.busesteinkamp.domain.server.Server
 import de.busesteinkamp.domain.user.User
 import de.busesteinkamp.domain.user.UserRepository
+import de.busesteinkamp.plugins.auth.DotenvPlugin
 import de.busesteinkamp.plugins.auth.SqliteAuthKeyRepository
 import de.busesteinkamp.plugins.media.*
 import de.busesteinkamp.plugins.platform.BlueskyPlatform
@@ -41,6 +42,7 @@ fun main(args: Array<String>): Unit = runBlocking {
     val server: Server = KtorServer(8443)
     val authKeyRepository: AuthKeyRepository = SqliteAuthKeyRepository()
     val openUrlInBrowserUseCase = OpenUrlInBrowserUseCase(DesktopBrowserOpener())
+    val envRetriever = DotenvPlugin()
 
     val examplePostPath = javaClass.getResource("/example_post.txt")?.path
     if(examplePostPath == null) {
@@ -75,9 +77,9 @@ fun main(args: Array<String>): Unit = runBlocking {
     )
 
     val userId = UUID.randomUUID()
-    val threads: Platform = ThreadsPlatform(UUID.randomUUID(), "Threads", server, authKeyRepository, openUrlInBrowserUseCase)
-    val bsky: Platform = BlueskyPlatform(UUID.randomUUID(), "Bluesky")
-    val twitter: Platform = TwitterPlatform(UUID.randomUUID(), "Twitter", server, authKeyRepository, openUrlInBrowserUseCase)
+    val threads: Platform = ThreadsPlatform(UUID.randomUUID(), "Threads", server, authKeyRepository, openUrlInBrowserUseCase, envRetriever)
+    val bsky: Platform = BlueskyPlatform(UUID.randomUUID(), "Bluesky", envRetriever)
+    val twitter: Platform = TwitterPlatform(UUID.randomUUID(), "Twitter", server, authKeyRepository, openUrlInBrowserUseCase, envRetriever)
     val mainUser: User = User(UUID.randomUUID(), "main", listOf(twitter))
     platformRepository.save(threads)
     val publishParameters: PublishParameters = PublishParameters()
