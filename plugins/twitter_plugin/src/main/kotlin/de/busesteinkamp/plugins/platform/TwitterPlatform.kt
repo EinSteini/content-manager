@@ -63,26 +63,17 @@ class TwitterPlatform(id: UUID?, name: String, private val server: Server, priva
         if(clientId == "" || clientSecret == ""){
             throw IllegalStateException("API key or secret not found in .env file")
         }
-
-        val key = authKeyRepository.find(name)
-
-        CoroutineScope(Dispatchers.IO).launch {
-            testKey(key)
-        }
     }
 
     override suspend fun upload(mediaFile: MediaFile, publishParameters: PublishParameters) {
-        if(!isDoneInitializing()){
+        testKey(key = authKeyRepository.find(name))
+        if(!this.authorized){
             throw IllegalStateException("Platform is not done initializing")
         }
         when(mediaFile.filetype){
             MediaType.TEXT_PLAIN -> handleTextUpload(mediaFile, publishParameters)
             else -> throw IllegalArgumentException("Unsupported media type")
         }
-    }
-
-    override fun isDoneInitializing(): Boolean {
-        return this.authorized
     }
 
     private suspend fun handleTextUpload(mediaFile: MediaFile, publishParameters: PublishParameters){

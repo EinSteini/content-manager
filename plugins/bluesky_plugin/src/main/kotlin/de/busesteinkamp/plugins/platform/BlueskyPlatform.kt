@@ -57,11 +57,6 @@ class BlueskyPlatform(id: UUID?, name: String, private val envRetriever: EnvRetr
         }
     }
 
-    override fun isDoneInitializing(): Boolean {
-        return true
-    }
-
-
     private suspend fun authorize() {
         val response: BlueskyAuthResponse = client.post("https://bsky.social/xrpc/com.atproto.server.createSession") {
             contentType(ContentType.Application.Json)

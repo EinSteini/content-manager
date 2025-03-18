@@ -50,12 +50,6 @@ class ThreadsPlatform(id: UUID?, name: String, private val server: Server, priva
     init {
         clientId = envRetriever.getEnvVariable("THREADS_APP_CLIENT_ID")
         clientSecret = envRetriever.getEnvVariable("THREADS_APP_CLIENT_SECRET")
-
-        val key = authKeyRepository.find(name)
-
-        CoroutineScope(Dispatchers.IO).launch {
-            testKey(key)
-        }
     }
 
     @Serializable
@@ -68,6 +62,7 @@ class ThreadsPlatform(id: UUID?, name: String, private val server: Server, priva
     data class ShortLivedAccessTokenResponse(val access_token: String, val user_id: String)
 
     override suspend fun upload(mediaFile: MediaFile, publishParameters: PublishParameters) {
+        testKey(key = authKeyRepository.find(name))
         if(!authorized || apiKey == ""){
             throw IllegalStateException("Platform is not authorized")
         }
@@ -77,10 +72,6 @@ class ThreadsPlatform(id: UUID?, name: String, private val server: Server, priva
                 throw IllegalArgumentException("Unsupported media type")
             }
         }
-    }
-
-    override fun isDoneInitializing(): Boolean {
-        return this.authorized
     }
 
     private suspend fun uploadText(mediaFile: MediaFile){
