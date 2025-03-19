@@ -26,6 +26,7 @@ dependencies {
     implementation(project(":plugins:sqlite_authkey_storage_plugin"))
     implementation(project(":plugins:generator_gemini_plugin"))
     implementation(project(":plugins:browser_plugin"))
+    implementation(project(":plugins:dotenv_plugin"))
 }
 
 tasks.test {

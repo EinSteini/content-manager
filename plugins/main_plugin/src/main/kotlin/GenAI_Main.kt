@@ -3,7 +3,7 @@ package de.busesteinkamp
 import de.busesteinkamp.application.generate.GenerateTextPostUseCase
 import de.busesteinkamp.application.generate.TextPostGenerator
 import de.busesteinkamp.application.process.ExecuteDistributionUseCase
-import de.busesteinkamp.application.utility.OpenUrlInBrowserUseCase
+import de.busesteinkamp.application.process.OpenUrlUseCase
 import de.busesteinkamp.domain.auth.AuthKeyRepository
 import de.busesteinkamp.domain.generator.GenAIService
 import de.busesteinkamp.domain.generator.Generator
@@ -15,6 +15,7 @@ import de.busesteinkamp.domain.process.Distribution
 import de.busesteinkamp.domain.process.DistributionRepository
 import de.busesteinkamp.domain.server.Server
 import de.busesteinkamp.domain.user.User
+import de.busesteinkamp.plugins.auth.DotenvPlugin
 import de.busesteinkamp.plugins.auth.SqliteAuthKeyRepository
 import de.busesteinkamp.plugins.client.GeminiClient
 import de.busesteinkamp.plugins.media.InMemoryPlatformRepository
@@ -48,7 +49,8 @@ fun main(): Unit = runBlocking {
     val textPostGenerator: Generator = TextPostGenerator(genAIService = genAIService)
     val generateTextPostUseCase = GenerateTextPostUseCase(textPostGenerator)
 
-    val openUrlInBrowserUseCase = OpenUrlInBrowserUseCase(DesktopBrowserOpener())
+    val openUrlUseCase = OpenUrlUseCase(false, DesktopBrowserOpener())
+    val dotenv = DotenvPlugin()
 
     val textContent = generateTextPostUseCase.execute(
         input = "Programmierung"
@@ -69,7 +71,7 @@ fun main(): Unit = runBlocking {
     )
     println(mediaFile.toString())
 
-    val threads: Platform = ThreadsPlatform(UUID.randomUUID(), "Threads", server, authKeyRepository, openUrlInBrowserUseCase)
+    val threads: Platform = ThreadsPlatform(UUID.randomUUID(), "Threads", server, authKeyRepository, openUrlUseCase, dotenv)
     val mainUser = User(UUID.randomUUID(), "main", listOf(threads))
     platformRepository.save(threads)
     val publishParameters = PublishParameters()

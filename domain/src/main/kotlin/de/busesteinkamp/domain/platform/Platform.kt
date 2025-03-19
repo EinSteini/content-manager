@@ -8,5 +8,4 @@ abstract class Platform (
     var name: String,
 ) {
     abstract suspend fun upload(mediaFile: MediaFile, publishParameters: PublishParameters)
-    abstract fun isDoneInitializing(): Boolean
 }

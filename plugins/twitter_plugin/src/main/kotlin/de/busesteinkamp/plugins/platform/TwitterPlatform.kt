@@ -1,8 +1,9 @@
 package de.busesteinkamp.plugins.platform
 
-import de.busesteinkamp.application.utility.OpenUrlInBrowserUseCase
+import de.busesteinkamp.application.process.OpenUrlUseCase
 import de.busesteinkamp.domain.auth.AuthKey
 import de.busesteinkamp.domain.auth.AuthKeyRepository
+import de.busesteinkamp.domain.auth.EnvRetriever
 import de.busesteinkamp.domain.media.MediaFile
 import de.busesteinkamp.domain.media.MediaType
 import de.busesteinkamp.domain.platform.Platform
@@ -13,26 +14,23 @@ import de.busesteinkamp.plugins.data.ShortLivedAccessTokenResponse
 import de.busesteinkamp.plugins.data.TwitterApiTweetResponse
 import de.busesteinkamp.plugins.media.TxtFile
 import de.busesteinkamp.plugins.server.TwitterServerPlugin
-import io.github.cdimascio.dotenv.dotenv
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
-import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.security.MessageDigest
 import java.util.*
 
-class TwitterPlatform(id: UUID?, name: String, private val server: Server, private val authKeyRepository: AuthKeyRepository, private val openUrlInBrowserUseCase: OpenUrlInBrowserUseCase) : Platform(id, name) {
+class TwitterPlatform(id: UUID?, name: String, private val server: Server, private val authKeyRepository: AuthKeyRepository, private val openUrlUseCase: OpenUrlUseCase, private val envRetriever: EnvRetriever) : Platform(id, name) {
 
     private var authorized = false
 
@@ -59,33 +57,23 @@ class TwitterPlatform(id: UUID?, name: String, private val server: Server, priva
     private lateinit var refreshToken: String
 
     init {
-        val dotenv = dotenv()
-        clientId = dotenv["X_API_CLIENT_ID"]
-        clientSecret = dotenv["X_API_CLIENT_SECRET"]
+        clientId = envRetriever.getEnvVariable("X_API_CLIENT_ID")
+        clientSecret = envRetriever.getEnvVariable("X_API_CLIENT_SECRET")
 
         if(clientId == "" || clientSecret == ""){
             throw IllegalStateException("API key or secret not found in .env file")
         }
-
-        val key = authKeyRepository.find(name)
-
-        CoroutineScope(Dispatchers.IO).launch {
-            testKey(key)
-        }
     }
 
     override suspend fun upload(mediaFile: MediaFile, publishParameters: PublishParameters) {
-        if(!isDoneInitializing()){
+        testKey(key = authKeyRepository.find(name))
+        if(!this.authorized){
             throw IllegalStateException("Platform is not done initializing")
         }
         when(mediaFile.filetype){
             MediaType.TEXT_PLAIN -> handleTextUpload(mediaFile, publishParameters)
             else -> throw IllegalArgumentException("Unsupported media type")
         }
-    }
-
-    override fun isDoneInitializing(): Boolean {
-        return this.authorized
     }
 
     private suspend fun handleTextUpload(mediaFile: MediaFile, publishParameters: PublishParameters){
@@ -139,7 +127,7 @@ class TwitterPlatform(id: UUID?, name: String, private val server: Server, priva
         val codeChallenge = generateCodeChallenge(codeVerifier)
 
         withContext(Dispatchers.IO) {
-            openUrlInBrowserUseCase.execute(
+            openUrlUseCase.execute(
                 "https://twitter.com/i/oauth2/authorize" +
                         "?client_id=$clientId" +
                         "&redirect_uri=$authAddress" +

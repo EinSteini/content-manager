@@ -39,18 +39,6 @@ class ExecuteDistributionUseCase(
     }
 
     private suspend fun uploadToPlatform(mediaFile: MediaFile, platform: Platform, publishParameters: PublishParameters) {
-        println("Uploading ${mediaFile.filename} to ${platform.name} ...")
-        var remainingRetries = 10
-        while (!platform.isDoneInitializing()){
-            println("Waiting for authorization on ${platform.name} ...")
-            remainingRetries--
-            println("Retries left: $remainingRetries")
-            if (remainingRetries == 0) {
-                println("Authorization failed on ${platform.name}")
-                return
-            }
-            kotlinx.coroutines.delay(10000)
-        }
         platform.upload(mediaFile, publishParameters)
         println("Uploaded ${mediaFile.filename} to ${platform.name}")
     }

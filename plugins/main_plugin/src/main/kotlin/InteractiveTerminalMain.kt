@@ -4,7 +4,7 @@ import de.busesteinkamp.application.generate.GenerateTextPostUseCase
 import de.busesteinkamp.application.generate.TextPostGenerator
 import de.busesteinkamp.application.media.GetMediaFileUseCase
 import de.busesteinkamp.application.process.ExecuteDistributionUseCase
-import de.busesteinkamp.application.utility.OpenUrlInBrowserUseCase
+import de.busesteinkamp.application.process.OpenUrlUseCase
 import de.busesteinkamp.domain.auth.AuthKeyRepository
 import de.busesteinkamp.domain.generator.GenAIService
 import de.busesteinkamp.domain.generator.Generator
@@ -17,6 +17,7 @@ import de.busesteinkamp.domain.process.DistributionRepository
 import de.busesteinkamp.domain.server.Server
 import de.busesteinkamp.domain.user.User
 import de.busesteinkamp.domain.user.UserRepository
+import de.busesteinkamp.plugins.auth.DotenvPlugin
 import de.busesteinkamp.plugins.auth.SqliteAuthKeyRepository
 import de.busesteinkamp.plugins.client.GeminiClient
 import de.busesteinkamp.plugins.media.*
@@ -58,16 +59,17 @@ class TerminalMain {
     private val getMediaFileUseCase = GetMediaFileUseCase(mediaFileRepository)
     private val server: Server = KtorServer(8443)
     private val authKeyRepository: AuthKeyRepository = SqliteAuthKeyRepository()
-    private val openUrlInBrowserUseCase = OpenUrlInBrowserUseCase(DesktopBrowserOpener())
+    private val openUrlUseCase = OpenUrlUseCase(true)
     private val genAIService: GenAIService = GeminiClient()
     private val textPostGenerator: Generator = TextPostGenerator(genAIService = genAIService)
     private val generateTextPostUseCase = GenerateTextPostUseCase(textPostGenerator)
+    private val envRetriever = DotenvPlugin()
 
     // List of available platform factories for creating platform instances
     private val availablePlatformFactories = listOf(
-        "Twitter" to { id: UUID -> TwitterPlatform(id, "Twitter", server, authKeyRepository, openUrlInBrowserUseCase) },
-        "Bluesky" to { id: UUID -> BlueskyPlatform(id, "Bluesky") },
-        "Threads" to { id: UUID -> ThreadsPlatform(id, "Threads", server, authKeyRepository, openUrlInBrowserUseCase) }
+        "Twitter" to { id: UUID -> TwitterPlatform(id, "Twitter", server, authKeyRepository, openUrlUseCase, envRetriever) },
+        "Bluesky" to { id: UUID -> BlueskyPlatform(id, "Bluesky", envRetriever) },
+        "Threads" to { id: UUID -> ThreadsPlatform(id, "Threads", server, authKeyRepository, openUrlUseCase, envRetriever) }
     )
 
     // Currently selected user preset
@@ -162,7 +164,7 @@ class TerminalMain {
                 4 -> {
                     println("${TerminalColors.GREEN}You can´t read your choices...${TerminalColors.RESET}")
                     println("${TerminalColors.GREEN}Now you will be rick rolled...${TerminalColors.RESET}")
-                    openUrlInBrowserUseCase.execute(rickRollUrl)
+                    openUrlUseCase.execute(rickRollUrl)
                 }
 
                 else -> println("${TerminalColors.RED}Invalid option. Please try again.${TerminalColors.RESET}")

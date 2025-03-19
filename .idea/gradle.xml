@@ -16,6 +16,7 @@
             <option value="$PROJECT_DIR$/plugins" />
             <option value="$PROJECT_DIR$/plugins/bluesky_plugin" />
             <option value="$PROJECT_DIR$/plugins/browser_plugin" />
+            <option value="$PROJECT_DIR$/plugins/dotenv_plugin" />
             <option value="$PROJECT_DIR$/plugins/generator_gemini_plugin" />
             <option value="$PROJECT_DIR$/plugins/image_plugin" />
             <option value="$PROJECT_DIR$/plugins/inmemory_plugin" />
@@ -24,6 +25,7 @@
             <option value="$PROJECT_DIR$/plugins/ktor_server_plugin" />
             <option value="$PROJECT_DIR$/plugins/main_plugin" />
             <option value="$PROJECT_DIR$/plugins/sqlite_authkey_storage_plugin" />
+            <option value="$PROJECT_DIR$/plugins/systemenv_plugin" />
             <option value="$PROJECT_DIR$/plugins/threads_plugin" />
             <option value="$PROJECT_DIR$/plugins/twitter_plugin" />
             <option value="$PROJECT_DIR$/plugins/txt_plugin" />

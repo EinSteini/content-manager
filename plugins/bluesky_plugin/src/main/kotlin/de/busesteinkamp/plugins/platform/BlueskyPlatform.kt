@@ -1,5 +1,6 @@
 package de.busesteinkamp.plugins.platform
 
+import de.busesteinkamp.domain.auth.EnvRetriever
 import de.busesteinkamp.domain.media.MediaFile
 import de.busesteinkamp.domain.media.MediaType
 import de.busesteinkamp.domain.platform.Platform
@@ -21,7 +22,7 @@ import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 import java.util.*
 
-class BlueskyPlatform(id: UUID?, name: String) : Platform(id, name) {
+class BlueskyPlatform(id: UUID?, name: String, private val envRetriever: EnvRetriever) : Platform(id, name) {
 
     private val client: HttpClient = HttpClient(CIO){
         install(ContentNegotiation) {
@@ -38,9 +39,8 @@ class BlueskyPlatform(id: UUID?, name: String) : Platform(id, name) {
     private var authToken: String = ""
 
     init {
-        val dotenv = dotenv()
-        username = dotenv["BSKY_USERNAME"]
-        password = dotenv["BSKY_PASSWORD"]
+        username = envRetriever.getEnvVariable("BSKY_USERNAME")
+        password = envRetriever.getEnvVariable("BSKY_PASSWORD")
     }
 
     override suspend fun upload(mediaFile: MediaFile, publishParameters: PublishParameters) {
@@ -56,11 +56,6 @@ class BlueskyPlatform(id: UUID?, name: String) : Platform(id, name) {
             else -> throw IllegalArgumentException("Unsupported filetype")
         }
     }
-
-    override fun isDoneInitializing(): Boolean {
-        return true
-    }
-
 
     private suspend fun authorize() {
         val response: BlueskyAuthResponse = client.post("https://bsky.social/xrpc/com.atproto.server.createSession") {

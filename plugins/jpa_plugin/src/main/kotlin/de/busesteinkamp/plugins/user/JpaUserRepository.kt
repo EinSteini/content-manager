@@ -37,4 +37,9 @@ class JpaUserRepository : UserRepository {
             entityManager.remove(user)
         }
     }
+
+    override fun findAll(): List<User> {
+        val query = entityManager.createQuery("SELECT u FROM User u")
+        return query.resultList as List<User>
+    }
 }
