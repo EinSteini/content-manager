@@ -29,6 +29,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2")
     implementation("ch.qos.logback:logback-classic:1.2.11")
     implementation("io.github.cdimascio:dotenv-kotlin:6.5.1")
+    implementation("org.hibernate:hibernate-core:6.2.6.Final")
 }
 
 tasks.test {
