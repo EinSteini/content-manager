@@ -23,7 +23,16 @@ class ImageFile(id: UUID?, filename: String, val altText: String) : MediaFile(
     }
 
     override fun loadFile() {
-        fileContent = java.io.File(filename).readBytes()
-        fileSize = fileContent.size.toLong()
+        try {
+            val resourceStream = Thread.currentThread()
+                .contextClassLoader
+                .getResourceAsStream(filename)
+
+            fileContent = resourceStream.readAllBytes()
+            fileSize = fileContent.size.toLong()
+        } catch (e: Exception) {
+            println("File $filename not found")
+            fileContent = byteArrayOf()
+        }
     }
 }

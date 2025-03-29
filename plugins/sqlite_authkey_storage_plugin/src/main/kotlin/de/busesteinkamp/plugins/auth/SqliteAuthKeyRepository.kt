@@ -12,7 +12,6 @@ class SqliteAuthKeyRepository : AuthKeyRepository {
     private val url = "jdbc:sqlite:auth_keys.db"
 
     init {
-        Class.forName("org.sqlite.JDBC")
         createTableIfNotExists()
     }
 

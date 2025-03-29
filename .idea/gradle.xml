@@ -21,7 +21,6 @@
             <option value="$PROJECT_DIR$/plugins/image_plugin" />
             <option value="$PROJECT_DIR$/plugins/inmemory_plugin" />
             <option value="$PROJECT_DIR$/plugins/jpa_plugin" />
-            <option value="$PROJECT_DIR$/plugins/json_plugin" />
             <option value="$PROJECT_DIR$/plugins/ktor_server_plugin" />
             <option value="$PROJECT_DIR$/plugins/main_plugin" />
             <option value="$PROJECT_DIR$/plugins/sqlite_authkey_storage_plugin" />

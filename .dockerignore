@@ -1,0 +1,6 @@
+*.db
+*.jks
+.env
+.idea/
+.gradle/
+build/

@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm") version "2.0.0"
+    id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
 group = "de.busesteinkamp"
@@ -27,8 +28,20 @@ dependencies {
     implementation(project(":plugins:generator_gemini_plugin"))
     implementation(project(":plugins:browser_plugin"))
     implementation(project(":plugins:dotenv_plugin"))
+    implementation(project(":plugins:systemenv_plugin"))
 }
 
 tasks.test {
     useJUnitPlatform()
+}
+
+tasks.shadowJar {
+    manifest {
+        attributes(
+            "Main-Class" to "de.busesteinkamp.MainKt"
+        )
+    }
+    archiveClassifier.set("")
+    mergeServiceFiles()
+    from(sourceSets.main.get().output)
 }

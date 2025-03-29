@@ -3,6 +3,7 @@ package de.busesteinkamp.plugins.media
 import de.busesteinkamp.domain.media.MediaFile
 import de.busesteinkamp.domain.media.MediaType
 import de.busesteinkamp.domain.process.UploadStatus
+import java.io.FileNotFoundException
 import java.util.*
 
 class TxtFile(id: UUID?, filename: String, fileSize: Long) : MediaFile(
@@ -23,7 +24,18 @@ class TxtFile(id: UUID?, filename: String, fileSize: Long) : MediaFile(
 
     override fun loadFile() {
         if(filename == "fromString") return
-        textContent = java.io.File(filename).readText()
-        fileSize = textContent.length.toLong()
+
+        try{
+            val resourceStream = Thread.currentThread()
+                .contextClassLoader
+                .getResourceAsStream(filename)
+
+            textContent = resourceStream.bufferedReader().use { it.readText() }
+            fileSize = textContent.length.toLong()
+        }catch (e: Exception){
+            println("File $filename not found")
+            textContent = ""
+        }
+
     }
 }

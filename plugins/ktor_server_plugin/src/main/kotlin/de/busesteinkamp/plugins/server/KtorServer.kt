@@ -84,7 +84,7 @@ class KtorServer(private val port: Int) : Server {
         val keyStorePassword = "12345678"
         val privateKeyPassword = "12345678"
 
-        val keyStoreFile = File("build/ktorServer.jks")
+        val keyStoreFile = File("ktorServer.jks")
         val keyStore = buildKeyStore {
             certificate("ktorServer") {
                 password = privateKeyPassword
