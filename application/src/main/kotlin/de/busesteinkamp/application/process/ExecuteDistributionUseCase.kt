@@ -1,5 +1,6 @@
 package de.busesteinkamp.application.process
 
+import de.busesteinkamp.domain.content.Content
 import de.busesteinkamp.domain.media.*
 import de.busesteinkamp.domain.platform.Platform
 import de.busesteinkamp.domain.platform.PublishParameters
@@ -19,7 +20,7 @@ class ExecuteDistributionUseCase(
 
         // Get the necessary data from the distribution
         val platforms = distribution.platforms
-        val mediaFile = distribution.mediaFile
+        val content = distribution.content
         val publishParameters = distribution.publishParameters
 
         // Start the distribution process
@@ -27,7 +28,7 @@ class ExecuteDistributionUseCase(
             distribution.reportStatus(platform, UploadStatus.PENDING)
             try {
                 CoroutineScope(Dispatchers.IO).launch {
-                    uploadToPlatform(mediaFile, platform, publishParameters)
+                    uploadToPlatform(content, platform, publishParameters)
                     distribution.reportStatus(platform, UploadStatus.FINISHED)
                 }
             } catch (e: Exception) {
@@ -38,8 +39,8 @@ class ExecuteDistributionUseCase(
         }
     }
 
-    private suspend fun uploadToPlatform(mediaFile: MediaFile, platform: Platform, publishParameters: PublishParameters) {
-        platform.upload(mediaFile, publishParameters)
-        println("Uploaded ${mediaFile.filename} to ${platform.name}")
+    private suspend fun uploadToPlatform(content: Content, platform: Platform, publishParameters: PublishParameters) {
+        platform.upload(content, publishParameters)
+        println("Uploaded ${content.get()} to ${platform.name}")
     }
 }

@@ -19,8 +19,10 @@ import de.busesteinkamp.plugins.auth.DotenvPlugin
 import de.busesteinkamp.plugins.auth.SqliteAuthKeyRepository
 import de.busesteinkamp.plugins.client.GeminiClient
 import de.busesteinkamp.plugins.media.InMemoryPlatformRepository
-import de.busesteinkamp.plugins.media.TxtFile
+import de.busesteinkamp.plugins.content.TxtContent
+import de.busesteinkamp.plugins.platform.BlueskyPlatform
 import de.busesteinkamp.plugins.platform.ThreadsPlatform
+import de.busesteinkamp.plugins.platform.TwitterPlatform
 import de.busesteinkamp.plugins.process.InMemoryDistributionRepository
 import de.busesteinkamp.plugins.server.KtorServer
 import de.busesteinkamp.plugins.utility.DesktopBrowserOpener
@@ -31,12 +33,6 @@ import java.util.*
 
 
 fun main(): Unit = runBlocking {
-    val temporaryPostFile = File(System.getProperty("user.dir"), "GenAI_Temp.txt")
-    if (!temporaryPostFile.exists()) {
-        temporaryPostFile.parentFile.mkdirs()
-        temporaryPostFile.createNewFile()
-    }
-
     val platformRepository: PlatformRepository = InMemoryPlatformRepository()
     val distributionRepository: DistributionRepository = InMemoryDistributionRepository()
 
@@ -56,20 +52,8 @@ fun main(): Unit = runBlocking {
         input = "Programmierung"
     )
 
-    try {
-        temporaryPostFile.writeText(textContent)
-        println("Write to file successful: $textContent")
-    } catch (e: IOException) {
-        println("Error writing to file: ${e.message}")
-        return@runBlocking
-    }
-
-    val mediaFile: MediaFile = TxtFile(
-        filename = temporaryPostFile.path,
-        fileSize = 1234,
-        id = UUID.randomUUID()
-    )
-    println(mediaFile.toString())
+    val content: TxtContent = TxtContent(content = textContent)
+    println(content.get())
 
     val threads: Platform = ThreadsPlatform(UUID.randomUUID(), "Threads", server, authKeyRepository, openUrlUseCase, dotenv)
     val mainUser = User(UUID.randomUUID(), "main", listOf(threads))
@@ -78,7 +62,7 @@ fun main(): Unit = runBlocking {
     publishParameters.title = "New Post"
 
     val distribution = Distribution(
-        mediaFile = mediaFile,
+        content = content,
         publishParameters = publishParameters,
         platforms = mainUser.platforms
     )

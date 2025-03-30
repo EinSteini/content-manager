@@ -20,6 +20,8 @@ import de.busesteinkamp.domain.user.UserRepository
 import de.busesteinkamp.plugins.auth.DotenvPlugin
 import de.busesteinkamp.plugins.auth.SqliteAuthKeyRepository
 import de.busesteinkamp.plugins.client.GeminiClient
+import de.busesteinkamp.plugins.content.ContentFileReader
+import de.busesteinkamp.plugins.content.TxtContent
 import de.busesteinkamp.plugins.media.*
 import de.busesteinkamp.plugins.platform.BlueskyPlatform
 import de.busesteinkamp.plugins.platform.ThreadsPlatform
@@ -27,7 +29,6 @@ import de.busesteinkamp.plugins.platform.TwitterPlatform
 import de.busesteinkamp.plugins.process.InMemoryDistributionRepository
 import de.busesteinkamp.plugins.server.KtorServer
 import de.busesteinkamp.plugins.user.InMemoryUserRepository
-import de.busesteinkamp.plugins.utility.DesktopBrowserOpener
 import kotlinx.coroutines.*
 import java.io.File
 import java.util.*
@@ -301,7 +302,7 @@ class TerminalMain {
         publishParams.title = textContent
 
         val distribution = Distribution(
-            mediaFile = TxtFile(UUID.randomUUID(), textContent),
+            content = TxtContent(UUID.randomUUID(), textContent),
             publishParameters = publishParams,
             platforms = platforms
         )
@@ -327,7 +328,7 @@ class TerminalMain {
         publishParams.title = text
 
         val distribution = Distribution(
-            mediaFile = TxtFile(UUID.randomUUID(), text),
+            content = TxtContent(UUID.randomUUID(), text),
             publishParameters = publishParams,
             platforms = platforms
         )
@@ -358,7 +359,7 @@ class TerminalMain {
         publishParams.title = "Text from file"
 
         val distribution = Distribution(
-            mediaFile = TxtFile(UUID.randomUUID(), filePath),
+            content = TxtContent(UUID.randomUUID(), filePath),
             publishParameters = publishParams,
             platforms = platforms
         )
@@ -389,8 +390,10 @@ class TerminalMain {
         val publishParams = PublishParameters()
         publishParams.title = text
 
+        val imageContent = ContentFileReader(imagePath).getContent()
+
         val distribution = Distribution(
-            mediaFile = ImageFile(UUID.randomUUID(), imagePath, altText),
+            content = imageContent,
             publishParameters = publishParams,
             platforms = platforms
         )
@@ -402,37 +405,39 @@ class TerminalMain {
      * Handles posting of multiple images with accompanying text.
      */
     private suspend fun handleMultipleImagesWithText() {
-        println("\nEnter the paths to your images (comma-separated):")
-        val imagePaths = readlnOrNull()?.split(",")?.map { it.trim() } ?: return
+        println("\n${TerminalColors.RED}Error: This feature is currently disabled.${TerminalColors.RESET}")
 
-        println("Enter alt texts for the images (comma-separated):")
-        val altTexts = readlnOrNull()?.split(",")?.map { it.trim() } ?: return
-
-        if (imagePaths.size != altTexts.size) {
-            println("${TerminalColors.RED}Error: Number of images and alt texts must match!${TerminalColors.RESET}")
-            return
-        }
-
-        println("Enter your text:")
-        val text = readlnOrNull() ?: return
-
-        val platforms = if (currentUser != null) {
-            currentUser!!.platforms
-        } else {
-            selectPlatforms()
-        }
-        if (platforms.isEmpty()) return
-
-        val publishParams = PublishParameters()
-        publishParams.title = text
-
-        val distribution = Distribution(
-            mediaFile = MultipleImageFiles(UUID.randomUUID(), imagePaths, altTexts),
-            publishParameters = publishParams,
-            platforms = platforms
-        )
-
-        executeAndShowResults(distribution)
+//        println("\nEnter the paths to your images (comma-separated):")
+//        val imagePaths = readlnOrNull()?.split(",")?.map { it.trim() } ?: return
+//
+//        println("Enter alt texts for the images (comma-separated):")
+//        val altTexts = readlnOrNull()?.split(",")?.map { it.trim() } ?: return
+//
+//        if (imagePaths.size != altTexts.size) {
+//            println("${TerminalColors.RED}Error: Number of images and alt texts must match!${TerminalColors.RESET}")
+//            return
+//        }
+//
+//        println("Enter your text:")
+//        val text = readlnOrNull() ?: return
+//
+//        val platforms = if (currentUser != null) {
+//            currentUser!!.platforms
+//        } else {
+//            selectPlatforms()
+//        }
+//        if (platforms.isEmpty()) return
+//
+//        val publishParams = PublishParameters()
+//        publishParams.title = text
+//
+//        val distribution = Distribution(
+//            mediaFile = MultipleImageFiles(UUID.randomUUID(), imagePaths, altTexts),
+//            publishParameters = publishParams,
+//            platforms = platforms
+//        )
+//
+//        executeAndShowResults(distribution)
     }
 
     /**

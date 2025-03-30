@@ -17,6 +17,7 @@
             <option value="$PROJECT_DIR$/plugins/bluesky_plugin" />
             <option value="$PROJECT_DIR$/plugins/browser_plugin" />
             <option value="$PROJECT_DIR$/plugins/dotenv_plugin" />
+            <option value="$PROJECT_DIR$/plugins/filereader_plugin" />
             <option value="$PROJECT_DIR$/plugins/generator_gemini_plugin" />
             <option value="$PROJECT_DIR$/plugins/image_plugin" />
             <option value="$PROJECT_DIR$/plugins/inmemory_plugin" />

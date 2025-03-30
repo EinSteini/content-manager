@@ -4,12 +4,13 @@ import de.busesteinkamp.application.process.OpenUrlUseCase
 import de.busesteinkamp.domain.auth.AuthKey
 import de.busesteinkamp.domain.auth.AuthKeyRepository
 import de.busesteinkamp.domain.auth.EnvRetriever
+import de.busesteinkamp.domain.content.Content
 import de.busesteinkamp.domain.media.MediaFile
-import de.busesteinkamp.domain.media.MediaType
+import de.busesteinkamp.domain.content.ContentType
 import de.busesteinkamp.domain.platform.Platform
 import de.busesteinkamp.domain.platform.PublishParameters
 import de.busesteinkamp.domain.server.Server
-import de.busesteinkamp.plugins.media.TxtFile
+import de.busesteinkamp.plugins.content.TxtContent
 import de.busesteinkamp.plugins.server.ThreadsServerPlugin
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -61,27 +62,26 @@ class ThreadsPlatform(id: UUID?, name: String, private val server: Server, priva
     @Serializable
     data class ShortLivedAccessTokenResponse(val access_token: String, val user_id: String)
 
-    override suspend fun upload(mediaFile: MediaFile, publishParameters: PublishParameters) {
+    override suspend fun upload(content: Content, publishParameters: PublishParameters) {
         testKey(key = authKeyRepository.find(name))
         if(!authorized || apiKey == ""){
             throw IllegalStateException("Platform is not authorized")
         }
-        when(mediaFile.filetype){
-            MediaType.TEXT_PLAIN -> uploadText(mediaFile)
+        when(content.contentType){
+            ContentType.TEXT_PLAIN -> uploadText(content)
             else -> {
                 throw IllegalArgumentException("Unsupported media type")
             }
         }
     }
 
-    private suspend fun uploadText(mediaFile: MediaFile){
+    private suspend fun uploadText(content: Content){
         println("Uploading text file to Threads")
-        val textFile = mediaFile as TxtFile
-        textFile.loadFile()
+        val textFile = content as TxtContent
 
         var response = client.post("https://graph.threads.net/v1.0/me/threads"){
             parameter("media_type", "TEXT")
-            parameter("text", textFile.textContent)
+            parameter("text", textFile.get())
             parameter("access_token", apiKey)
         }
         if(response.status != HttpStatusCode.OK){

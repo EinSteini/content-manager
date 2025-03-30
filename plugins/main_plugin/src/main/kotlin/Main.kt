@@ -4,9 +4,8 @@ import SystemEnvPlugin
 import de.busesteinkamp.application.media.GetMediaFileUseCase
 import de.busesteinkamp.application.process.ExecuteDistributionUseCase
 import de.busesteinkamp.application.process.OpenUrlUseCase
-import de.busesteinkamp.application.utility.BrowserOpener
 import de.busesteinkamp.domain.auth.AuthKeyRepository
-import de.busesteinkamp.domain.media.MediaFile
+import de.busesteinkamp.domain.content.Content
 import de.busesteinkamp.domain.media.MediaFileRepository
 import de.busesteinkamp.domain.platform.Platform
 import de.busesteinkamp.domain.platform.PlatformRepository
@@ -16,8 +15,8 @@ import de.busesteinkamp.domain.process.DistributionRepository
 import de.busesteinkamp.domain.server.Server
 import de.busesteinkamp.domain.user.User
 import de.busesteinkamp.domain.user.UserRepository
-import de.busesteinkamp.plugins.auth.DotenvPlugin
 import de.busesteinkamp.plugins.auth.SqliteAuthKeyRepository
+import de.busesteinkamp.plugins.content.ContentFileReader
 import de.busesteinkamp.plugins.media.*
 import de.busesteinkamp.plugins.platform.BlueskyPlatform
 import de.busesteinkamp.plugins.platform.ThreadsPlatform
@@ -56,25 +55,8 @@ fun main(args: Array<String>): Unit = runBlocking {
         return@runBlocking
     }
 
-    // Beispielhafte Verwendung der Use Cases
-    val mediaFile: MediaFile = TxtFile(
-        filename = examplePostPath,
-        fileSize = 1234,
-        id = UUID.randomUUID()
-    )
-    println(mediaFile.toString())
-
-    val imageFile: MediaFile = ImageFile(
-        filename = exampleImagePath,
-        id = UUID.randomUUID(),
-        altText = "A nice welcome image"
-    )
-
-    val imageFiles: MediaFile = MultipleImageFiles(
-        imagePaths = listOf(exampleImagePath, exampleImagePath,exampleImagePath, exampleImagePath ),
-        id = UUID.randomUUID(),
-        altTexts = listOf("A nice welcome image", "Another nice welcome image","A nice welcome image", "Another nice welcome image" )
-    )
+    val textContent: Content = ContentFileReader(examplePostPath).getContent()
+    val imageContent: Content = ContentFileReader(exampleImagePath).getContent()
 
     val userId = UUID.randomUUID()
     val threads: Platform = ThreadsPlatform(UUID.randomUUID(), "Threads", server, authKeyRepository, openUrlUseCase, envRetriever)
@@ -86,13 +68,13 @@ fun main(args: Array<String>): Unit = runBlocking {
     publishParameters.title = "Und sogar bis zu 4 Bilder klappen!"
 
     val distribution = Distribution(
-        mediaFile = TxtFile(UUID.randomUUID(), "Tweet with API!"),
+        content = textContent,
         publishParameters = publishParameters,
         platforms = mainUser.platforms
     )
 
     val imageDistribution = Distribution(
-        mediaFile = imageFiles,
+        content = imageContent,
         publishParameters = publishParameters,
         platforms = listOf(bsky)
     )

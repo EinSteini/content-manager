@@ -1,12 +1,12 @@
 package de.busesteinkamp.domain.media
 
-import de.busesteinkamp.domain.process.UploadStatus
+import de.busesteinkamp.domain.content.ContentType
 import java.util.UUID
 
 abstract class MediaFile(
     var id: UUID? = UUID.randomUUID(),
     var filename: String,
-    var filetype: MediaType,
+    var filetype: ContentType,
     var fileSize: Long,
 ) {
     override fun toString(): String {

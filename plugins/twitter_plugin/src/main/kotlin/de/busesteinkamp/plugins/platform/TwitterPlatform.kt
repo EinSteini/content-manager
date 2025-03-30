@@ -4,15 +4,16 @@ import de.busesteinkamp.application.process.OpenUrlUseCase
 import de.busesteinkamp.domain.auth.AuthKey
 import de.busesteinkamp.domain.auth.AuthKeyRepository
 import de.busesteinkamp.domain.auth.EnvRetriever
+import de.busesteinkamp.domain.content.Content
 import de.busesteinkamp.domain.media.MediaFile
-import de.busesteinkamp.domain.media.MediaType
+import de.busesteinkamp.domain.content.ContentType
 import de.busesteinkamp.domain.platform.Platform
 import de.busesteinkamp.domain.platform.PublishParameters
 import de.busesteinkamp.domain.server.Server
 import de.busesteinkamp.plugins.data.LongLivedAccessTokenResponse
 import de.busesteinkamp.plugins.data.ShortLivedAccessTokenResponse
 import de.busesteinkamp.plugins.data.TwitterApiTweetResponse
-import de.busesteinkamp.plugins.media.TxtFile
+import de.busesteinkamp.plugins.content.TxtContent
 import de.busesteinkamp.plugins.server.TwitterServerPlugin
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -22,9 +23,7 @@ import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.security.MessageDigest
@@ -65,27 +64,27 @@ class TwitterPlatform(id: UUID?, name: String, private val server: Server, priva
         }
     }
 
-    override suspend fun upload(mediaFile: MediaFile, publishParameters: PublishParameters) {
+    override suspend fun upload(content: Content, publishParameters: PublishParameters) {
         testKey(key = authKeyRepository.find(name))
         if(!this.authorized){
             throw IllegalStateException("Platform is not done initializing")
         }
-        when(mediaFile.filetype){
-            MediaType.TEXT_PLAIN -> handleTextUpload(mediaFile, publishParameters)
+        when(content.contentType){
+            ContentType.TEXT_PLAIN -> handleTextUpload(content, publishParameters)
             else -> throw IllegalArgumentException("Unsupported media type")
         }
     }
 
-    private suspend fun handleTextUpload(mediaFile: MediaFile, publishParameters: PublishParameters){
-        val textFile = mediaFile as TxtFile
+    private suspend fun handleTextUpload(content: Content, publishParameters: PublishParameters){
+        val textFile = content as TxtContent
         val url = "https://api.twitter.com/2/tweets"
 
         val response = client.post(url) {
             headers {
                 append(HttpHeaders.Authorization, "Bearer $apiKey")
-                append(HttpHeaders.ContentType, ContentType.Application.Json)
+                append(HttpHeaders.ContentType, io.ktor.http.ContentType.Application.Json)
             }
-            setBody("{\"text\": \"${textFile.textContent}\"}")
+            setBody("{\"text\": \"${textFile.get()}\"}")
         }
 
         if (response.status != HttpStatusCode.Created) {
@@ -195,7 +194,7 @@ class TwitterPlatform(id: UUID?, name: String, private val server: Server, priva
         val response = client.post("https://api.twitter.com/2/oauth2/token"){
             headers {
                 append(HttpHeaders.Authorization, "Basic $base64Credentials")
-                append(HttpHeaders.ContentType, ContentType.Application.FormUrlEncoded.toString())
+                append(HttpHeaders.ContentType, io.ktor.http.ContentType.Application.FormUrlEncoded.toString())
             }
             setBody(FormDataContent(Parameters.build {
                 append("client_id", clientId)

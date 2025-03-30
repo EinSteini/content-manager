@@ -40,3 +40,5 @@ include("plugins:dotenv_plugin")
 findProject(":plugins:dotenv_plugin")?.name = "dotenv_plugin"
 include("plugins:systemenv_plugin")
 findProject(":plugins:systemenv_plugin")?.name = "systemenv_plugin"
+include("plugins:filereader_plugin")
+findProject(":plugins:filereader_plugin")?.name = "filereader_plugin"
