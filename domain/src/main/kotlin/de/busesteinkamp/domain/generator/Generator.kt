@@ -1,5 +1,7 @@
 package de.busesteinkamp.domain.generator
 
-interface Generator {
-    suspend fun generateText(input: String, parameters: Map<String, String>): String
+import de.busesteinkamp.domain.content.ContentProvider
+
+interface Generator : ContentProvider {
+    suspend fun generateText(input: String, parameters: Map<String, String>)
 }

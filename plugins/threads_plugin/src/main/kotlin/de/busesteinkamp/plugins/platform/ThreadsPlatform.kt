@@ -5,12 +5,11 @@ import de.busesteinkamp.domain.auth.AuthKey
 import de.busesteinkamp.domain.auth.AuthKeyRepository
 import de.busesteinkamp.domain.auth.EnvRetriever
 import de.busesteinkamp.domain.content.Content
-import de.busesteinkamp.domain.media.MediaFile
 import de.busesteinkamp.domain.content.ContentType
 import de.busesteinkamp.domain.platform.Platform
 import de.busesteinkamp.domain.platform.PublishParameters
 import de.busesteinkamp.domain.server.Server
-import de.busesteinkamp.plugins.content.TxtContent
+import de.busesteinkamp.adapters.content.TxtContent
 import de.busesteinkamp.plugins.server.ThreadsServerPlugin
 import io.ktor.client.*
 import io.ktor.client.call.*

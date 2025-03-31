@@ -2,13 +2,12 @@ package de.busesteinkamp.plugins.platform
 
 import de.busesteinkamp.domain.auth.EnvRetriever
 import de.busesteinkamp.domain.content.Content
-import de.busesteinkamp.domain.media.MediaFile
 import de.busesteinkamp.domain.content.ContentType
 import de.busesteinkamp.domain.platform.Platform
 import de.busesteinkamp.domain.platform.PublishParameters
 import de.busesteinkamp.plugins.data.*
-import de.busesteinkamp.plugins.content.TxtContent
-import de.busesteinkamp.plugins.content.ImageContent
+import de.busesteinkamp.adapters.content.TxtContent
+import de.busesteinkamp.adapters.content.ImageContent
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*

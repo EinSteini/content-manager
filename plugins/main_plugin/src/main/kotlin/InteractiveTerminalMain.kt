@@ -1,7 +1,7 @@
 package de.busesteinkamp
 
-import de.busesteinkamp.application.generate.GenerateTextPostUseCase
-import de.busesteinkamp.application.generate.TextPostGenerator
+import de.busesteinkamp.application.generate.GenerateTextContentUseCase
+import de.busesteinkamp.adapters.generate.TextPostGenerator
 import de.busesteinkamp.application.media.GetMediaFileUseCase
 import de.busesteinkamp.application.process.ExecuteDistributionUseCase
 import de.busesteinkamp.application.process.OpenUrlUseCase
@@ -21,7 +21,7 @@ import de.busesteinkamp.plugins.auth.DotenvPlugin
 import de.busesteinkamp.plugins.auth.SqliteAuthKeyRepository
 import de.busesteinkamp.plugins.client.GeminiClient
 import de.busesteinkamp.plugins.content.ContentFileReader
-import de.busesteinkamp.plugins.content.TxtContent
+import de.busesteinkamp.adapters.content.TxtContent
 import de.busesteinkamp.plugins.media.*
 import de.busesteinkamp.plugins.platform.BlueskyPlatform
 import de.busesteinkamp.plugins.platform.ThreadsPlatform
@@ -63,7 +63,7 @@ class TerminalMain {
     private val openUrlUseCase = OpenUrlUseCase(true)
     private val genAIService: GenAIService = GeminiClient()
     private val textPostGenerator: Generator = TextPostGenerator(genAIService = genAIService)
-    private val generateTextPostUseCase = GenerateTextPostUseCase(textPostGenerator)
+    private val generateTextContentUseCase = GenerateTextContentUseCase(textPostGenerator)
     private val envRetriever = DotenvPlugin()
 
     // List of available platform factories for creating platform instances
@@ -294,15 +294,15 @@ class TerminalMain {
         }
         if (platforms.isEmpty()) return
 
-        val textContent = generateTextPostUseCase.execute(
+        val textContent = generateTextContentUseCase.execute(
             input = prompt
         )
 
         val publishParams = PublishParameters()
-        publishParams.title = textContent
+        publishParams.title = textContent.get().toString()
 
         val distribution = Distribution(
-            content = TxtContent(UUID.randomUUID(), textContent),
+            content = TxtContent(UUID.randomUUID(), textContent.get().toString()),
             publishParameters = publishParams,
             platforms = platforms
         )

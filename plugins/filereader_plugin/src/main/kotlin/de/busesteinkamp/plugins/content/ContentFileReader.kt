@@ -1,5 +1,7 @@
 package de.busesteinkamp.plugins.content
 
+import de.busesteinkamp.adapters.content.ImageContent
+import de.busesteinkamp.adapters.content.TxtContent
 import de.busesteinkamp.domain.content.Content
 import de.busesteinkamp.domain.content.ContentProvider
 import de.busesteinkamp.domain.content.ContentType

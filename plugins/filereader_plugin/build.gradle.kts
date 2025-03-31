@@ -14,8 +14,6 @@ dependencies {
     implementation(project(":adapters"))
     implementation(project(":application"))
     implementation(project(":domain"))
-    implementation(project(":plugins:txt_plugin"))
-    implementation(project(":plugins:image_plugin"))
 }
 
 tasks.test {

@@ -1,4 +1,4 @@
-package de.busesteinkamp.plugins.content
+package de.busesteinkamp.adapters.content
 
 import de.busesteinkamp.domain.content.Content
 import de.busesteinkamp.domain.content.ContentType

@@ -1,13 +1,12 @@
 package de.busesteinkamp
 
-import de.busesteinkamp.application.generate.GenerateTextPostUseCase
-import de.busesteinkamp.application.generate.TextPostGenerator
+import de.busesteinkamp.application.generate.GenerateTextContentUseCase
+import de.busesteinkamp.adapters.generate.TextPostGenerator
 import de.busesteinkamp.application.process.ExecuteDistributionUseCase
 import de.busesteinkamp.application.process.OpenUrlUseCase
 import de.busesteinkamp.domain.auth.AuthKeyRepository
 import de.busesteinkamp.domain.generator.GenAIService
 import de.busesteinkamp.domain.generator.Generator
-import de.busesteinkamp.domain.media.MediaFile
 import de.busesteinkamp.domain.platform.Platform
 import de.busesteinkamp.domain.platform.PlatformRepository
 import de.busesteinkamp.domain.platform.PublishParameters
@@ -19,16 +18,12 @@ import de.busesteinkamp.plugins.auth.DotenvPlugin
 import de.busesteinkamp.plugins.auth.SqliteAuthKeyRepository
 import de.busesteinkamp.plugins.client.GeminiClient
 import de.busesteinkamp.plugins.media.InMemoryPlatformRepository
-import de.busesteinkamp.plugins.content.TxtContent
-import de.busesteinkamp.plugins.platform.BlueskyPlatform
+import de.busesteinkamp.adapters.content.TxtContent
 import de.busesteinkamp.plugins.platform.ThreadsPlatform
-import de.busesteinkamp.plugins.platform.TwitterPlatform
 import de.busesteinkamp.plugins.process.InMemoryDistributionRepository
 import de.busesteinkamp.plugins.server.KtorServer
 import de.busesteinkamp.plugins.utility.DesktopBrowserOpener
 import kotlinx.coroutines.runBlocking
-import java.io.File
-import java.io.IOException
 import java.util.*
 
 
@@ -43,16 +38,16 @@ fun main(): Unit = runBlocking {
 
     val genAIService: GenAIService = GeminiClient()
     val textPostGenerator: Generator = TextPostGenerator(genAIService = genAIService)
-    val generateTextPostUseCase = GenerateTextPostUseCase(textPostGenerator)
+    val generateTextContentUseCase = GenerateTextContentUseCase(textPostGenerator)
 
     val openUrlUseCase = OpenUrlUseCase(false, DesktopBrowserOpener())
     val dotenv = DotenvPlugin()
 
-    val textContent = generateTextPostUseCase.execute(
+    val textContent = generateTextContentUseCase.execute(
         input = "Programmierung"
     )
 
-    val content: TxtContent = TxtContent(content = textContent)
+    val content: TxtContent = TxtContent(content = textContent.get().toString())
     println(content.get())
 
     val threads: Platform = ThreadsPlatform(UUID.randomUUID(), "Threads", server, authKeyRepository, openUrlUseCase, dotenv)
