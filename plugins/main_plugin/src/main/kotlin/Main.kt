@@ -1,5 +1,6 @@
 package de.busesteinkamp
 
+import SystemEnvPlugin
 import de.busesteinkamp.application.media.GetMediaFileUseCase
 import de.busesteinkamp.application.process.ExecuteDistributionUseCase
 import de.busesteinkamp.application.process.OpenUrlUseCase
@@ -41,7 +42,7 @@ fun main(args: Array<String>): Unit = runBlocking {
     val server: Server = KtorServer(8443)
     val authKeyRepository: AuthKeyRepository = SqliteAuthKeyRepository()
     val openUrlUseCase = OpenUrlUseCase(true, DesktopBrowserOpener())
-    val envRetriever = DotenvPlugin()
+    val envRetriever = SystemEnvPlugin()
 
     val examplePostPath = javaClass.getResource("/example_post.txt")?.path
     if(examplePostPath == null) {
@@ -79,7 +80,7 @@ fun main(args: Array<String>): Unit = runBlocking {
     val threads: Platform = ThreadsPlatform(UUID.randomUUID(), "Threads", server, authKeyRepository, openUrlUseCase, envRetriever)
     val bsky: Platform = BlueskyPlatform(UUID.randomUUID(), "Bluesky", envRetriever)
     val twitter: Platform = TwitterPlatform(UUID.randomUUID(), "Twitter", server, authKeyRepository, openUrlUseCase, envRetriever)
-    val mainUser: User = User(UUID.randomUUID(), "main", listOf(twitter))
+    val mainUser: User = User(UUID.randomUUID(), "main", listOf(bsky, threads))
     platformRepository.save(threads)
     val publishParameters: PublishParameters = PublishParameters()
     publishParameters.title = "Und sogar bis zu 4 Bilder klappen!"

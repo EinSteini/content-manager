@@ -13,7 +13,6 @@ include(":application")
 include(":adapters")
 include(":plugins")
 include("plugins:jpa_plugin")
-include("plugins:json_plugin")
 include("plugins:main_plugin")
 include("plugins:inmemory_plugin")
 findProject(":plugins:inmemory_plugin")?.name = "inmemory_plugin"
