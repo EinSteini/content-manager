@@ -21,14 +21,13 @@ dependencies {
     implementation(project(":plugins:threads_plugin"))
     implementation(project(":plugins:bluesky_plugin"))
     implementation(project(":plugins:twitter_plugin"))
-    implementation(project(":plugins:txt_plugin"))
-    implementation(project(":plugins:image_plugin"))
     implementation(project(":plugins:ktor_server_plugin"))
     implementation(project(":plugins:sqlite_authkey_storage_plugin"))
     implementation(project(":plugins:generator_gemini_plugin"))
     implementation(project(":plugins:browser_plugin"))
     implementation(project(":plugins:dotenv_plugin"))
     implementation(project(":plugins:systemenv_plugin"))
+    implementation(project(":plugins:filereader_plugin"))
 }
 
 tasks.test {

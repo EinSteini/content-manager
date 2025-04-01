@@ -15,8 +15,6 @@ dependencies {
     implementation(project(":adapters"))
     implementation(project(":application"))
     implementation(project(":domain"))
-    implementation(project(":plugins:txt_plugin"))
-    implementation(project(":plugins:image_plugin"))
     implementation("io.ktor:ktor-client-core:3.1.0")
     implementation("io.ktor:ktor-client-cio:3.1.0")
     implementation("io.ktor:ktor-client-content-negotiation:3.1.0")

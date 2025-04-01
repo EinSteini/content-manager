@@ -1,14 +1,12 @@
 package de.busesteinkamp
 
-import de.busesteinkamp.application.generate.GenerateTextPostUseCase
-import de.busesteinkamp.application.generate.TextPostGenerator
-import de.busesteinkamp.application.media.GetMediaFileUseCase
+import de.busesteinkamp.application.generate.GenerateTextContentUseCase
+import de.busesteinkamp.adapters.generate.TextPostGenerator
 import de.busesteinkamp.application.process.ExecuteDistributionUseCase
 import de.busesteinkamp.application.process.OpenUrlUseCase
 import de.busesteinkamp.domain.auth.AuthKeyRepository
 import de.busesteinkamp.domain.generator.GenAIService
 import de.busesteinkamp.domain.generator.Generator
-import de.busesteinkamp.domain.media.MediaFileRepository
 import de.busesteinkamp.domain.platform.Platform
 import de.busesteinkamp.domain.platform.PlatformRepository
 import de.busesteinkamp.domain.platform.PublishParameters
@@ -20,6 +18,8 @@ import de.busesteinkamp.domain.user.UserRepository
 import de.busesteinkamp.plugins.auth.DotenvPlugin
 import de.busesteinkamp.plugins.auth.SqliteAuthKeyRepository
 import de.busesteinkamp.plugins.client.GeminiClient
+import de.busesteinkamp.plugins.content.ContentFileReader
+import de.busesteinkamp.adapters.content.TxtContent
 import de.busesteinkamp.plugins.media.*
 import de.busesteinkamp.plugins.platform.BlueskyPlatform
 import de.busesteinkamp.plugins.platform.ThreadsPlatform
@@ -27,7 +27,6 @@ import de.busesteinkamp.plugins.platform.TwitterPlatform
 import de.busesteinkamp.plugins.process.InMemoryDistributionRepository
 import de.busesteinkamp.plugins.server.KtorServer
 import de.busesteinkamp.plugins.user.InMemoryUserRepository
-import de.busesteinkamp.plugins.utility.DesktopBrowserOpener
 import kotlinx.coroutines.*
 import java.io.File
 import java.util.*
@@ -51,18 +50,16 @@ object TerminalColors {
  * This class handles user interaction and manages the posting of content to various platforms.
  */
 class TerminalMain {
-    private val mediaFileRepository: MediaFileRepository = InMemoryMediaFileRepository()
     private val platformRepository: PlatformRepository = InMemoryPlatformRepository()
     private val userRepository: UserRepository = InMemoryUserRepository()
     private val distributionRepository: DistributionRepository = InMemoryDistributionRepository()
     private val executeDistributionUseCase = ExecuteDistributionUseCase(distributionRepository)
-    private val getMediaFileUseCase = GetMediaFileUseCase(mediaFileRepository)
     private val server: Server = KtorServer(8443)
     private val authKeyRepository: AuthKeyRepository = SqliteAuthKeyRepository()
     private val openUrlUseCase = OpenUrlUseCase(true)
     private val genAIService: GenAIService = GeminiClient()
     private val textPostGenerator: Generator = TextPostGenerator(genAIService = genAIService)
-    private val generateTextPostUseCase = GenerateTextPostUseCase(textPostGenerator)
+    private val generateTextContentUseCase = GenerateTextContentUseCase(textPostGenerator)
     private val envRetriever = DotenvPlugin()
 
     // List of available platform factories for creating platform instances
@@ -293,15 +290,15 @@ class TerminalMain {
         }
         if (platforms.isEmpty()) return
 
-        val textContent = generateTextPostUseCase.execute(
+        val textContent = generateTextContentUseCase.execute(
             input = prompt
         )
 
         val publishParams = PublishParameters()
-        publishParams.title = textContent
+        publishParams.title = textContent.get().toString()
 
         val distribution = Distribution(
-            mediaFile = TxtFile(UUID.randomUUID(), textContent),
+            content = TxtContent(UUID.randomUUID(), textContent.get().toString()),
             publishParameters = publishParams,
             platforms = platforms
         )
@@ -327,7 +324,7 @@ class TerminalMain {
         publishParams.title = text
 
         val distribution = Distribution(
-            mediaFile = TxtFile(UUID.randomUUID(), text),
+            content = TxtContent(UUID.randomUUID(), text),
             publishParameters = publishParams,
             platforms = platforms
         )
@@ -358,7 +355,7 @@ class TerminalMain {
         publishParams.title = "Text from file"
 
         val distribution = Distribution(
-            mediaFile = TxtFile(UUID.randomUUID(), filePath),
+            content = TxtContent(UUID.randomUUID(), filePath),
             publishParameters = publishParams,
             platforms = platforms
         )
@@ -389,8 +386,10 @@ class TerminalMain {
         val publishParams = PublishParameters()
         publishParams.title = text
 
+        val imageContent = ContentFileReader(imagePath).getContent()
+
         val distribution = Distribution(
-            mediaFile = ImageFile(UUID.randomUUID(), imagePath, altText),
+            content = imageContent,
             publishParameters = publishParams,
             platforms = platforms
         )
@@ -402,37 +401,39 @@ class TerminalMain {
      * Handles posting of multiple images with accompanying text.
      */
     private suspend fun handleMultipleImagesWithText() {
-        println("\nEnter the paths to your images (comma-separated):")
-        val imagePaths = readlnOrNull()?.split(",")?.map { it.trim() } ?: return
+        println("\n${TerminalColors.RED}Error: This feature is currently disabled.${TerminalColors.RESET}")
 
-        println("Enter alt texts for the images (comma-separated):")
-        val altTexts = readlnOrNull()?.split(",")?.map { it.trim() } ?: return
-
-        if (imagePaths.size != altTexts.size) {
-            println("${TerminalColors.RED}Error: Number of images and alt texts must match!${TerminalColors.RESET}")
-            return
-        }
-
-        println("Enter your text:")
-        val text = readlnOrNull() ?: return
-
-        val platforms = if (currentUser != null) {
-            currentUser!!.platforms
-        } else {
-            selectPlatforms()
-        }
-        if (platforms.isEmpty()) return
-
-        val publishParams = PublishParameters()
-        publishParams.title = text
-
-        val distribution = Distribution(
-            mediaFile = MultipleImageFiles(UUID.randomUUID(), imagePaths, altTexts),
-            publishParameters = publishParams,
-            platforms = platforms
-        )
-
-        executeAndShowResults(distribution)
+//        println("\nEnter the paths to your images (comma-separated):")
+//        val imagePaths = readlnOrNull()?.split(",")?.map { it.trim() } ?: return
+//
+//        println("Enter alt texts for the images (comma-separated):")
+//        val altTexts = readlnOrNull()?.split(",")?.map { it.trim() } ?: return
+//
+//        if (imagePaths.size != altTexts.size) {
+//            println("${TerminalColors.RED}Error: Number of images and alt texts must match!${TerminalColors.RESET}")
+//            return
+//        }
+//
+//        println("Enter your text:")
+//        val text = readlnOrNull() ?: return
+//
+//        val platforms = if (currentUser != null) {
+//            currentUser!!.platforms
+//        } else {
+//            selectPlatforms()
+//        }
+//        if (platforms.isEmpty()) return
+//
+//        val publishParams = PublishParameters()
+//        publishParams.title = text
+//
+//        val distribution = Distribution(
+//            mediaFile = MultipleImageFiles(UUID.randomUUID(), imagePaths, altTexts),
+//            publishParameters = publishParams,
+//            platforms = platforms
+//        )
+//
+//        executeAndShowResults(distribution)
     }
 
     /**

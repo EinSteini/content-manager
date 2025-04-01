@@ -1,13 +1,12 @@
 package de.busesteinkamp
 
-import de.busesteinkamp.application.generate.GenerateTextPostUseCase
-import de.busesteinkamp.application.generate.TextPostGenerator
+import de.busesteinkamp.application.generate.GenerateTextContentUseCase
+import de.busesteinkamp.adapters.generate.TextPostGenerator
 import de.busesteinkamp.application.process.ExecuteDistributionUseCase
 import de.busesteinkamp.application.process.OpenUrlUseCase
 import de.busesteinkamp.domain.auth.AuthKeyRepository
 import de.busesteinkamp.domain.generator.GenAIService
 import de.busesteinkamp.domain.generator.Generator
-import de.busesteinkamp.domain.media.MediaFile
 import de.busesteinkamp.domain.platform.Platform
 import de.busesteinkamp.domain.platform.PlatformRepository
 import de.busesteinkamp.domain.platform.PublishParameters
@@ -19,24 +18,16 @@ import de.busesteinkamp.plugins.auth.DotenvPlugin
 import de.busesteinkamp.plugins.auth.SqliteAuthKeyRepository
 import de.busesteinkamp.plugins.client.GeminiClient
 import de.busesteinkamp.plugins.media.InMemoryPlatformRepository
-import de.busesteinkamp.plugins.media.TxtFile
+import de.busesteinkamp.adapters.content.TxtContent
 import de.busesteinkamp.plugins.platform.ThreadsPlatform
 import de.busesteinkamp.plugins.process.InMemoryDistributionRepository
 import de.busesteinkamp.plugins.server.KtorServer
 import de.busesteinkamp.plugins.utility.DesktopBrowserOpener
 import kotlinx.coroutines.runBlocking
-import java.io.File
-import java.io.IOException
 import java.util.*
 
 
 fun main(): Unit = runBlocking {
-    val temporaryPostFile = File(System.getProperty("user.dir"), "GenAI_Temp.txt")
-    if (!temporaryPostFile.exists()) {
-        temporaryPostFile.parentFile.mkdirs()
-        temporaryPostFile.createNewFile()
-    }
-
     val platformRepository: PlatformRepository = InMemoryPlatformRepository()
     val distributionRepository: DistributionRepository = InMemoryDistributionRepository()
 
@@ -47,29 +38,17 @@ fun main(): Unit = runBlocking {
 
     val genAIService: GenAIService = GeminiClient()
     val textPostGenerator: Generator = TextPostGenerator(genAIService = genAIService)
-    val generateTextPostUseCase = GenerateTextPostUseCase(textPostGenerator)
+    val generateTextContentUseCase = GenerateTextContentUseCase(textPostGenerator)
 
     val openUrlUseCase = OpenUrlUseCase(false, DesktopBrowserOpener())
     val dotenv = DotenvPlugin()
 
-    val textContent = generateTextPostUseCase.execute(
+    val textContent = generateTextContentUseCase.execute(
         input = "Programmierung"
     )
 
-    try {
-        temporaryPostFile.writeText(textContent)
-        println("Write to file successful: $textContent")
-    } catch (e: IOException) {
-        println("Error writing to file: ${e.message}")
-        return@runBlocking
-    }
-
-    val mediaFile: MediaFile = TxtFile(
-        filename = temporaryPostFile.path,
-        fileSize = 1234,
-        id = UUID.randomUUID()
-    )
-    println(mediaFile.toString())
+    val content: TxtContent = TxtContent(content = textContent.get().toString())
+    println(content.get())
 
     val threads: Platform = ThreadsPlatform(UUID.randomUUID(), "Threads", server, authKeyRepository, openUrlUseCase, dotenv)
     val mainUser = User(UUID.randomUUID(), "main", listOf(threads))
@@ -78,7 +57,7 @@ fun main(): Unit = runBlocking {
     publishParameters.title = "New Post"
 
     val distribution = Distribution(
-        mediaFile = mediaFile,
+        content = content,
         publishParameters = publishParameters,
         platforms = mainUser.platforms
     )

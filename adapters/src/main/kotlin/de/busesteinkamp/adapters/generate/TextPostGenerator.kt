@@ -1,11 +1,14 @@
-package de.busesteinkamp.application.generate
+package de.busesteinkamp.adapters.generate
 
+import de.busesteinkamp.adapters.content.TxtContent
 import de.busesteinkamp.domain.generator.GenAIService
 import de.busesteinkamp.domain.generator.Generator
 
 class TextPostGenerator(private val genAIService: GenAIService) : Generator {
 
-    override suspend fun generateText(input: String, parameters: Map<String, String>): String {
+    private var text = ""
+
+    override suspend fun generateText(input: String, parameters: Map<String, String>) {
         val systemPrompt = """
             Du bist ein KI-Modell, das darauf spezialisiert ist, humorvolle und kurze Texte für soziale Medien wie Threads, X (Twitter) oder Bluesky zu generieren.
 
@@ -29,6 +32,10 @@ class TextPostGenerator(private val genAIService: GenAIService) : Generator {
             Generiere mir einen Threads Post zum Thema $input.
         """.trimIndent()
 
-        return genAIService.sendMessage(systemPrompt, userInput)
+        text =  genAIService.sendMessage(systemPrompt, userInput)
+    }
+
+    override fun getContent(): TxtContent {
+        return TxtContent(content = text)
     }
 }

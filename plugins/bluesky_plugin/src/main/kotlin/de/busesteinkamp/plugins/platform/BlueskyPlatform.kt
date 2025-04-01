@@ -1,15 +1,13 @@
 package de.busesteinkamp.plugins.platform
 
 import de.busesteinkamp.domain.auth.EnvRetriever
-import de.busesteinkamp.domain.media.MediaFile
-import de.busesteinkamp.domain.media.MediaType
+import de.busesteinkamp.domain.content.Content
+import de.busesteinkamp.domain.content.ContentType
 import de.busesteinkamp.domain.platform.Platform
 import de.busesteinkamp.domain.platform.PublishParameters
 import de.busesteinkamp.plugins.data.*
-import de.busesteinkamp.plugins.media.ImageFile
-import de.busesteinkamp.plugins.media.MultipleImageFiles
-import de.busesteinkamp.plugins.media.TxtFile
-import io.github.cdimascio.dotenv.dotenv
+import de.busesteinkamp.adapters.content.TxtContent
+import de.busesteinkamp.adapters.content.ImageContent
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
@@ -43,42 +41,41 @@ class BlueskyPlatform(id: UUID?, name: String, private val envRetriever: EnvRetr
         password = envRetriever.getEnvVariable("BSKY_PASSWORD")
     }
 
-    override suspend fun upload(mediaFile: MediaFile, publishParameters: PublishParameters) {
+    override suspend fun upload(content: Content, publishParameters: PublishParameters) {
         if(username == "" || password == ""){
             throw IllegalStateException("Bluesky credentials not set")
         }
         authorize()
-        when(mediaFile.filetype){
-            MediaType.TEXT_PLAIN -> handleTextPost(mediaFile)
-            MediaType.IMAGE_JPEG-> handleImagePost(mediaFile, publishParameters)
-            MediaType.IMAGE_PNG -> handleImagePost(mediaFile, publishParameters)
-            MediaType.IMAGE_MULTIPLE -> handleMultipleImagePost(mediaFile, publishParameters)
+        when(content.contentType){
+            ContentType.TEXT_PLAIN -> handleTextPost(content)
+            ContentType.IMAGE_JPEG-> handleImagePost(content, publishParameters)
+            ContentType.IMAGE_PNG -> handleImagePost(content, publishParameters)
+            //ContentType.IMAGE_MULTIPLE -> handleMultipleImagePost(content, publishParameters)
             else -> throw IllegalArgumentException("Unsupported filetype")
         }
     }
 
     private suspend fun authorize() {
         val response: BlueskyAuthResponse = client.post("https://bsky.social/xrpc/com.atproto.server.createSession") {
-            contentType(ContentType.Application.Json)
+            contentType(io.ktor.http.ContentType.Application.Json)
             setBody(BlueskyAuthRequest(username, password))
         }.body()
 
         authToken = response.accessJwt
     }
 
-    private suspend fun handleTextPost(mediaFile: MediaFile){
+    private suspend fun handleTextPost(content: Content){
         println("Uploading text file to Bluesky")
-        val textFile = mediaFile as TxtFile
-        textFile.loadFile()
+        val text = content as TxtContent
 
         val postRequest = BlueskyCreatePostRequest(
             collection = "app.bsky.feed.post",
             repo = username,
-            record = BlueskyPostRecord(textFile.textContent, convertDateToIso8601(Date()), facets = parseFacets(textFile.textContent)),
+            record = BlueskyPostRecord(text.get(), convertDateToIso8601(Date()), facets = parseFacets(text.get())),
         )
 
         val response = client.post("https://bsky.social/xrpc/com.atproto.repo.createRecord") {
-            contentType(ContentType.Application.Json)
+            contentType(io.ktor.http.ContentType.Application.Json)
             bearerAuth(authToken)
             setBody(postRequest)
         }
@@ -88,53 +85,53 @@ class BlueskyPlatform(id: UUID?, name: String, private val envRetriever: EnvRetr
         println("Text file uploaded to Bluesky")
     }
 
-    private suspend fun handleImagePost(mediaFile: MediaFile, publishParameters: PublishParameters){
-        val blobRef = uploadImage(mediaFile)
+    private suspend fun handleImagePost(content: Content, publishParameters: PublishParameters){
+        val blobRef = uploadImage(content)
         val blobRefs = listOf(
             BlueskyBlobImage(
-            alt = (mediaFile as ImageFile).altText,
+            alt = (content as ImageContent).altText,
             image = blobRef.blob
         )
         )
         createPostWithImages(blobRefs, publishParameters)
     }
 
-    private suspend fun handleMultipleImagePost(mediaFile: MediaFile, publishParameters: PublishParameters){
-        val multipleImageFile = mediaFile as MultipleImageFiles
+//    private suspend fun handleMultipleImagePost(mediaFile: MediaFile, publishParameters: PublishParameters){
+//        val multipleImageFile = mediaFile as MultipleImageFiles
+//
+//        if(multipleImageFile.imageFiles.isEmpty()){
+//            throw IllegalArgumentException("No image files provided")
+//        }
+//
+//        if(multipleImageFile.imageFiles.size > 4){
+//            throw IllegalArgumentException("Maximum of 4 images allowed")
+//        }
+//
+//        val blobs = mutableListOf<BlueskyBlobImage>()
+//        multipleImageFile.imageFiles.forEach({
+//            val blob = uploadImage(it).blob
+//            blobs.add(
+//                BlueskyBlobImage(
+//                    alt = it.altText,
+//                    image = blob
+//                )
+//            )
+//        })
+//
+//        createPostWithImages(blobs, publishParameters)
+//     }
 
-        if(multipleImageFile.imageFiles.isEmpty()){
-            throw IllegalArgumentException("No image files provided")
-        }
-
-        if(multipleImageFile.imageFiles.size > 4){
-            throw IllegalArgumentException("Maximum of 4 images allowed")
-        }
-
-        val blobs = mutableListOf<BlueskyBlobImage>()
-        multipleImageFile.imageFiles.forEach({
-            val blob = uploadImage(it).blob
-            blobs.add(
-                BlueskyBlobImage(
-                    alt = it.altText,
-                    image = blob
-                )
-            )
-        })
-
-        createPostWithImages(blobs, publishParameters)
-     }
-
-    private suspend fun uploadImage(mediaFile: MediaFile): BlueskyUploadResponse {
+    private suspend fun uploadImage(content: Content): BlueskyUploadResponse {
         println("Uploading image file to Bluesky")
-        val imageFile = mediaFile as ImageFile
+        val imageFile = content as ImageContent
 
-        if(imageFile.fileSize > 1000000){
+        if(imageFile.size > 1000000){
             throw IllegalArgumentException("Image file too large. Maximum size is 1MB")
         }
 
         val response = client.post("https://bsky.social/xrpc/com.atproto.repo.uploadBlob") {
             bearerAuth(authToken)
-            setBody(ByteArrayContent(imageFile.fileContent, contentType = ContentType.parse(imageFile.filetype.text)))
+            setBody(ByteArrayContent(imageFile.get(), contentType = io.ktor.http.ContentType.parse(imageFile.contentType.text)))
         }
 
         if(response.status != HttpStatusCode.OK){
@@ -163,7 +160,7 @@ class BlueskyPlatform(id: UUID?, name: String, private val envRetriever: EnvRetr
 
         val response = client.post("https://bsky.social/xrpc/com.atproto.repo.createRecord") {
             bearerAuth(authToken)
-            contentType(ContentType.Application.Json)
+            contentType(io.ktor.http.ContentType.Application.Json)
             setBody(postRequest)
         }
 
