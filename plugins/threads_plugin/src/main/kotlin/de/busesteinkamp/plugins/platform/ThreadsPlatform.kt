@@ -47,6 +47,10 @@ class ThreadsPlatform(id: UUID?, name: String, private val server: Server, priva
 
     private lateinit var apiKey: String
 
+    private val mediaQueue: Queue<Pair<Content, PublishParameters>> = LinkedList()
+
+    private var uploadInProgress = false
+
     init {
         clientId = envRetriever.getEnvVariable("THREADS_APP_CLIENT_ID")
         clientSecret = envRetriever.getEnvVariable("THREADS_APP_CLIENT_SECRET")
@@ -62,16 +66,30 @@ class ThreadsPlatform(id: UUID?, name: String, private val server: Server, priva
     data class ShortLivedAccessTokenResponse(val access_token: String, val user_id: String)
 
     override suspend fun upload(content: Content, publishParameters: PublishParameters) {
-        testKey(key = authKeyRepository.find(name))
-        if(!authorized || apiKey == ""){
-            throw IllegalStateException("Platform is not authorized")
+        mediaQueue.add(Pair(content, publishParameters))
+        testKeyAndReauthorize(key = authKeyRepository.find(name), callback = suspend {
+            handleNewMedia()
+        })
+    }
+
+    private suspend fun handleNewMedia(){
+        if(uploadInProgress){
+            return
         }
-        when(content.contentType){
-            ContentType.TEXT_PLAIN -> uploadText(content)
-            else -> {
-                throw IllegalArgumentException("Unsupported media type")
+        if(mediaQueue.isEmpty()) {
+            println("No media to upload")
+            return
+        }
+
+        uploadInProgress = true
+        while(mediaQueue.isNotEmpty()){
+            val (content, publishParameters) = mediaQueue.poll()
+            when(content.contentType){
+                ContentType.TEXT_PLAIN -> uploadText(content)
+                else -> throw IllegalArgumentException("Unsupported media type")
             }
         }
+        uploadInProgress = false
     }
 
     private suspend fun uploadText(content: Content){
@@ -104,7 +122,7 @@ class ThreadsPlatform(id: UUID?, name: String, private val server: Server, priva
         println("Published text file to Threads")
     }
 
-    private suspend fun testKey(key: AuthKey?){
+    private suspend fun testKeyAndReauthorize(key: AuthKey?, callback: suspend () -> Unit){
         if(key != null){
             // todo: check if key is working
             if(key.expiresAt < Date()){
@@ -125,11 +143,15 @@ class ThreadsPlatform(id: UUID?, name: String, private val server: Server, priva
 
         this.apiKey = key.key
         this.authorized = true
+        callback()
     }
 
     private suspend fun authorize(){
         this.authorized = false
         server.registerPlugin(threadsServerPlugin)
+        if(!server.isRunning()){
+            server.start()
+        }
         withContext(Dispatchers.IO) {
             openUrlUseCase.execute(
                     "https://threads.net/oauth/authorize" +
@@ -150,6 +172,7 @@ class ThreadsPlatform(id: UUID?, name: String, private val server: Server, priva
         authKeyRepository.save(longLivedToken)
         this.apiKey = longLivedToken.key
         this.authorized = true
+        handleNewMedia()
         server.unregisterPlugin(threadsServerPlugin)
     }
 

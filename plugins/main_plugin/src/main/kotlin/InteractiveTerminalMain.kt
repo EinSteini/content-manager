@@ -20,6 +20,7 @@ import de.busesteinkamp.plugins.auth.SqliteAuthKeyRepository
 import de.busesteinkamp.plugins.client.GeminiClient
 import de.busesteinkamp.plugins.content.ContentFileReader
 import de.busesteinkamp.adapters.content.TxtContent
+import de.busesteinkamp.application.utility.BrowserOpener
 import de.busesteinkamp.plugins.media.*
 import de.busesteinkamp.plugins.platform.BlueskyPlatform
 import de.busesteinkamp.plugins.platform.ThreadsPlatform
@@ -27,6 +28,7 @@ import de.busesteinkamp.plugins.platform.TwitterPlatform
 import de.busesteinkamp.plugins.process.InMemoryDistributionRepository
 import de.busesteinkamp.plugins.server.KtorServer
 import de.busesteinkamp.plugins.user.InMemoryUserRepository
+import de.busesteinkamp.plugins.utility.DesktopBrowserOpener
 import kotlinx.coroutines.*
 import java.io.File
 import java.util.*
@@ -56,7 +58,7 @@ class TerminalMain {
     private val executeDistributionUseCase = ExecuteDistributionUseCase(distributionRepository)
     private val server: Server = KtorServer(8443)
     private val authKeyRepository: AuthKeyRepository = SqliteAuthKeyRepository()
-    private val openUrlUseCase = OpenUrlUseCase(true)
+    private val openUrlUseCase = OpenUrlUseCase(false, DesktopBrowserOpener())
     private val genAIService: GenAIService = GeminiClient()
     private val textPostGenerator: Generator = TextPostGenerator(genAIService = genAIService)
     private val generateTextContentUseCase = GenerateTextContentUseCase(textPostGenerator)
@@ -139,6 +141,7 @@ class TerminalMain {
      * Starts the terminal application and handles user interaction.
      */
     fun start() = runBlocking {
+        server.start()
         displayWelcome()
 
         while (true) {

@@ -9,4 +9,5 @@ interface Server {
     fun removeRoute(path: String)
     fun getPort(): Int
     fun getAddress(): String
+    fun isRunning(): Boolean
 }
