@@ -23,6 +23,7 @@ dependencies {
     implementation("io.ktor:ktor-serialization-kotlinx-json:3.1.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2")
     implementation("io.github.cdimascio:dotenv-kotlin:6.5.1")
+    implementation("org.hibernate:hibernate-core:6.2.6.Final")
 }
 
 tasks.test {
