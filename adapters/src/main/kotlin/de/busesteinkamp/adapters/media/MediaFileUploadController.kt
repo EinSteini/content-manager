@@ -3,7 +3,7 @@ package de.busesteinkamp.adapters.media
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpHandler
 import com.sun.net.httpserver.HttpServer
-import de.busesteinkamp.application.media.GetMediaFileUseCase
+import de.busesteinkamp.adapters.content.TxtContent
 import de.busesteinkamp.application.process.ExecuteDistributionUseCase
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -13,7 +13,6 @@ import java.util.UUID
 
 class MediaFileUploadController(
     private val executeDistributionUseCase: ExecuteDistributionUseCase,
-    private val getMediaFileUseCase: GetMediaFileUseCase
 ) : HttpHandler {
 
     private val json = Json { prettyPrint = true }
@@ -64,7 +63,7 @@ class MediaFileUploadController(
         try {
             val path = exchange.requestURI.path
             val id = UUID.fromString(path.substringAfterLast("/"))
-            val mediaFile = getMediaFileUseCase.execute(id)
+            val mediaFile = TxtContent(content = "Hello World").get()
             if (mediaFile != null) {
                 val response = json.encodeToString(mediaFile)
                 exchange.sendResponseHeaders(200, response.toByteArray().size.toLong())

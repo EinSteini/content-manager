@@ -2,13 +2,11 @@ package de.busesteinkamp
 
 import de.busesteinkamp.application.generate.GenerateTextContentUseCase
 import de.busesteinkamp.adapters.generate.TextPostGenerator
-import de.busesteinkamp.application.media.GetMediaFileUseCase
 import de.busesteinkamp.application.process.ExecuteDistributionUseCase
 import de.busesteinkamp.application.process.OpenUrlUseCase
 import de.busesteinkamp.domain.auth.AuthKeyRepository
 import de.busesteinkamp.domain.generator.GenAIService
 import de.busesteinkamp.domain.generator.Generator
-import de.busesteinkamp.domain.media.MediaFileRepository
 import de.busesteinkamp.domain.platform.Platform
 import de.busesteinkamp.domain.platform.PlatformRepository
 import de.busesteinkamp.domain.platform.PublishParameters
@@ -52,12 +50,10 @@ object TerminalColors {
  * This class handles user interaction and manages the posting of content to various platforms.
  */
 class TerminalMain {
-    private val mediaFileRepository: MediaFileRepository = InMemoryMediaFileRepository()
     private val platformRepository: PlatformRepository = InMemoryPlatformRepository()
     private val userRepository: UserRepository = InMemoryUserRepository()
     private val distributionRepository: DistributionRepository = InMemoryDistributionRepository()
     private val executeDistributionUseCase = ExecuteDistributionUseCase(distributionRepository)
-    private val getMediaFileUseCase = GetMediaFileUseCase(mediaFileRepository)
     private val server: Server = KtorServer(8443)
     private val authKeyRepository: AuthKeyRepository = SqliteAuthKeyRepository()
     private val openUrlUseCase = OpenUrlUseCase(true)

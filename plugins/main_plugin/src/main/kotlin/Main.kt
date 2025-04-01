@@ -1,12 +1,10 @@
 package de.busesteinkamp
 
 import SystemEnvPlugin
-import de.busesteinkamp.application.media.GetMediaFileUseCase
 import de.busesteinkamp.application.process.ExecuteDistributionUseCase
 import de.busesteinkamp.application.process.OpenUrlUseCase
 import de.busesteinkamp.domain.auth.AuthKeyRepository
 import de.busesteinkamp.domain.content.Content
-import de.busesteinkamp.domain.media.MediaFileRepository
 import de.busesteinkamp.domain.platform.Platform
 import de.busesteinkamp.domain.platform.PlatformRepository
 import de.busesteinkamp.domain.platform.PublishParameters
@@ -32,12 +30,10 @@ open class Main
 
 fun main(args: Array<String>): Unit = runBlocking {
     // Hier die Abhängigkeiten manuell erstellen und injizieren
-    val mediaFileRepository: MediaFileRepository = InMemoryMediaFileRepository() // Verwende InMemoryMediaFileRepository
     val platformRepository: PlatformRepository = InMemoryPlatformRepository()
     val userRepository: UserRepository = InMemoryUserRepository()
     val distributionRepository: DistributionRepository = InMemoryDistributionRepository()
     val executeDistributionUseCase = ExecuteDistributionUseCase(distributionRepository)
-    val getMediaFileUseCase = GetMediaFileUseCase(mediaFileRepository)
     val server: Server = KtorServer(8443)
     val authKeyRepository: AuthKeyRepository = SqliteAuthKeyRepository()
     val openUrlUseCase = OpenUrlUseCase(true, DesktopBrowserOpener())
