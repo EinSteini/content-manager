@@ -18,8 +18,6 @@ include("plugins:inmemory_plugin")
 findProject(":plugins:inmemory_plugin")?.name = "inmemory_plugin"
 include("plugins:threads_plugin")
 findProject(":plugins:threads_plugin")?.name = "threads_plugin"
-include("plugins:txt_plugin")
-findProject(":plugins:txt_plugin")?.name = "txt_plugin"
 include("plugins:ktor_server_plugin")
 findProject(":plugins:ktor_server_plugin")?.name = "ktor_server_plugin"
 include("plugins:ktor_server_plugin")
@@ -30,8 +28,6 @@ include("plugins:generator_gemini_plugin")
 findProject(":plugins:generator_gemini_plugin")?.name = "generator_gemini_plugin"
 include("plugins:bluesky_plugin")
 findProject(":plugins:bluesky_plugin")?.name = "bluesky_plugin"
-include("plugins:image_plugin")
-findProject(":plugins:image_plugin")?.name = "image_plugin"
 include("plugins:browser_plugin")
 findProject(":plugins:browser_plugin")?.name = "browser_plugin"
 include("plugins:twitter_plugin")

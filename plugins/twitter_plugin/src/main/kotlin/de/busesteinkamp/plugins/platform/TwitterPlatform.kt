@@ -248,22 +248,4 @@ class TwitterPlatform(id: UUID?, name: String, private val server: Server, priva
         val split = key.split(":")
         return Pair(split[0], split[1])
     }
-
-    private fun ab() {
-        println("ab")
-    }
-
-    private fun cd(
-        callback: () -> Unit
-    ){
-        print("cd")
-        callback()
-    }
-
-    private fun ef(){
-        println("ef")
-        cd(callback = {
-            ab()
-        })
-    }
 }
