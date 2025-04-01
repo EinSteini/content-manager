@@ -22,7 +22,9 @@ import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.security.MessageDigest
@@ -54,6 +56,10 @@ class TwitterPlatform(id: UUID?, name: String, private val server: Server, priva
     private lateinit var apiKey: String
     private lateinit var refreshToken: String
 
+    private val mediaQueue: Queue<Pair<Content, PublishParameters>> = LinkedList()
+
+    private var uploadInProgress = false
+
     init {
         clientId = envRetriever.getEnvVariable("X_API_CLIENT_ID")
         clientSecret = envRetriever.getEnvVariable("X_API_CLIENT_SECRET")
@@ -64,14 +70,30 @@ class TwitterPlatform(id: UUID?, name: String, private val server: Server, priva
     }
 
     override suspend fun upload(content: Content, publishParameters: PublishParameters) {
-        testKey(key = authKeyRepository.find(name))
-        if(!this.authorized){
-            throw IllegalStateException("Platform is not done initializing")
+        mediaQueue.add(Pair(content, publishParameters))
+        testKeyAndReauthorize(key = authKeyRepository.find(name), callback = suspend {
+            handleNewMedia()
+        })
+    }
+
+    private suspend fun handleNewMedia(){
+        if(uploadInProgress){
+            return
         }
-        when(content.contentType){
-            ContentType.TEXT_PLAIN -> handleTextUpload(content, publishParameters)
-            else -> throw IllegalArgumentException("Unsupported media type")
+        if(mediaQueue.isEmpty()) {
+            println("No media to upload")
+            return
         }
+
+        uploadInProgress = true
+        while(mediaQueue.isNotEmpty()){
+            val (content, publishParameters) = mediaQueue.poll()
+            when(content.contentType){
+                ContentType.TEXT_PLAIN -> handleTextUpload(content, publishParameters)
+                else -> throw IllegalArgumentException("Unsupported media type")
+            }
+        }
+        uploadInProgress = false
     }
 
     private suspend fun handleTextUpload(content: Content, publishParameters: PublishParameters){
@@ -94,7 +116,7 @@ class TwitterPlatform(id: UUID?, name: String, private val server: Server, priva
         println("Uploaded text file to Twitter. Tweet ID: ${res.data.id}")
     }
 
-    private suspend fun testKey(key: AuthKey?){
+    private suspend fun testKeyAndReauthorize(key: AuthKey?, callback: suspend () -> Unit){
         if(key != null){
             // todo: check if key is working
             if(key.expiresAt < Date()){
@@ -115,11 +137,15 @@ class TwitterPlatform(id: UUID?, name: String, private val server: Server, priva
 
         this.apiKey = key.key.split(":")[0]
         this.authorized = true
+        callback()
     }
 
     private suspend fun authorize(){
         this.authorized = false
         server.registerPlugin(twitterServerPlugin)
+        if(!server.isRunning()){
+            server.start()
+        }
 
         val stateString = UUID.randomUUID().toString()
         val codeChallenge = generateCodeChallenge(codeVerifier)
@@ -157,6 +183,7 @@ class TwitterPlatform(id: UUID?, name: String, private val server: Server, priva
         authKeyRepository.save(shortLivedToken)
         this.apiKey = shortLivedToken.key.split(":")[0]
         this.authorized = true
+        handleNewMedia()
         server.unregisterPlugin(twitterServerPlugin)
     }
 
@@ -220,5 +247,23 @@ class TwitterPlatform(id: UUID?, name: String, private val server: Server, priva
     private fun decodeToken(key: String): Pair<String, String> {
         val split = key.split(":")
         return Pair(split[0], split[1])
+    }
+
+    private fun ab() {
+        println("ab")
+    }
+
+    private fun cd(
+        callback: () -> Unit
+    ){
+        print("cd")
+        callback()
+    }
+
+    private fun ef(){
+        println("ef")
+        cd(callback = {
+            ab()
+        })
     }
 }

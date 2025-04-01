@@ -42,6 +42,7 @@ class KtorServer(private val port: Int) : Server {
 
     override fun registerPlugin(plugin: ServerPlugin) {
         plugins.add(plugin)
+        if(running) plugin.onLoad(this)
     }
 
     override fun unregisterPlugin(plugin: ServerPlugin) {
@@ -109,5 +110,9 @@ class KtorServer(private val port: Int) : Server {
 
     override fun getAddress(): String {
         return "https://0.0.0.0:$port" // Todo: get actual IP
+    }
+
+    override fun isRunning(): Boolean {
+        return running
     }
 }
