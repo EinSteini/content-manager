@@ -14,8 +14,6 @@ dependencies {
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     implementation(kotlin("stdlib-jdk8"))
-    implementation("jakarta.persistence:jakarta.persistence-api:3.1.0")
-
 }
 
 tasks.test {

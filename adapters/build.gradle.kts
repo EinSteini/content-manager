@@ -14,7 +14,6 @@ dependencies {
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     implementation(kotlin("stdlib-jdk8"))
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1") // Oder die neueste Version
     implementation(project(":domain"))
     implementation(project(":application"))
 }
