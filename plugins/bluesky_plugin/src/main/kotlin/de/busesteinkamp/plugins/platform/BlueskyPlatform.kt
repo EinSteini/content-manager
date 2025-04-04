@@ -8,6 +8,7 @@ import de.busesteinkamp.domain.platform.PublishParameters
 import de.busesteinkamp.plugins.data.*
 import de.busesteinkamp.adapters.content.TxtContent
 import de.busesteinkamp.adapters.content.ImageContent
+import de.busesteinkamp.domain.process.UploadStatus
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
@@ -17,6 +18,9 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.serialization.kotlinx.json.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import java.util.*
 
@@ -41,17 +45,21 @@ class BlueskyPlatform(id: UUID?, name: String, private val envRetriever: EnvRetr
         password = envRetriever.getEnvVariable("BSKY_PASSWORD")
     }
 
-    override suspend fun upload(content: Content, publishParameters: PublishParameters) {
+    override fun upload(content: Content, publishParameters: PublishParameters, callback: ((UploadStatus) -> Unit)?) {
         if(username == "" || password == ""){
             throw IllegalStateException("Bluesky credentials not set")
         }
-        authorize()
-        when(content.contentType){
-            ContentType.TEXT_PLAIN -> handleTextPost(content)
-            ContentType.IMAGE_JPEG-> handleImagePost(content, publishParameters)
-            ContentType.IMAGE_PNG -> handleImagePost(content, publishParameters)
-            //ContentType.IMAGE_MULTIPLE -> handleMultipleImagePost(content, publishParameters)
-            else -> throw IllegalArgumentException("Unsupported filetype")
+        CoroutineScope(Dispatchers.IO).launch {
+            authorize()
+            callback?.invoke(UploadStatus.PENDING)
+            when (content.contentType) {
+                ContentType.TEXT_PLAIN -> handleTextPost(content)
+                ContentType.IMAGE_JPEG -> handleImagePost(content, publishParameters)
+                ContentType.IMAGE_PNG -> handleImagePost(content, publishParameters)
+                //ContentType.IMAGE_MULTIPLE -> handleMultipleImagePost(content, publishParameters)
+                else -> throw IllegalArgumentException("Unsupported filetype")
+            }
+            callback?.invoke(UploadStatus.FINISHED)
         }
     }
 

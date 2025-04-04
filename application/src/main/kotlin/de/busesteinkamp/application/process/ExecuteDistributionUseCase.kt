@@ -6,9 +6,6 @@ import de.busesteinkamp.domain.platform.PublishParameters
 import de.busesteinkamp.domain.process.Distribution
 import de.busesteinkamp.domain.process.DistributionRepository
 import de.busesteinkamp.domain.process.UploadStatus
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 class ExecuteDistributionUseCase(
     private val distributionRepository: DistributionRepository
@@ -26,9 +23,8 @@ class ExecuteDistributionUseCase(
         platforms.forEach { platform ->
             distribution.reportStatus(platform, UploadStatus.PENDING)
             try {
-                CoroutineScope(Dispatchers.IO).launch {
-                    uploadToPlatform(content, platform, publishParameters)
-                    distribution.reportStatus(platform, UploadStatus.FINISHED)
+                platform.upload(content, publishParameters) { status ->
+                    distribution.reportStatus(platform, status)
                 }
             } catch (e: Exception) {
                 distribution.reportStatus(platform, UploadStatus.FAILED)
@@ -36,10 +32,5 @@ class ExecuteDistributionUseCase(
                 distributionRepository.update(distribution)
             }
         }
-    }
-
-    private suspend fun uploadToPlatform(content: Content, platform: Platform, publishParameters: PublishParameters) {
-        platform.upload(content, publishParameters)
-        println("Uploaded ${content.get()} to ${platform.name}")
     }
 }
