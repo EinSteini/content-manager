@@ -13,6 +13,7 @@ import de.busesteinkamp.plugins.data.LongLivedAccessTokenResponse
 import de.busesteinkamp.plugins.data.ShortLivedAccessTokenResponse
 import de.busesteinkamp.plugins.data.TwitterApiTweetResponse
 import de.busesteinkamp.adapters.content.TxtContent
+import de.busesteinkamp.domain.process.UploadStatus
 import de.busesteinkamp.plugins.server.TwitterServerPlugin
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -69,11 +70,15 @@ class TwitterPlatform(id: UUID?, name: String, private val server: Server, priva
         }
     }
 
-    override suspend fun upload(content: Content, publishParameters: PublishParameters) {
+    override fun upload(content: Content, publishParameters: PublishParameters, callback: ((UploadStatus) -> Unit)?) {
         mediaQueue.add(Pair(content, publishParameters))
-        testKeyAndReauthorize(key = authKeyRepository.find(name), callback = suspend {
-            handleNewMedia()
-        })
+        CoroutineScope(Dispatchers.IO).launch {
+            testKeyAndReauthorize(key = authKeyRepository.find(name), callback = suspend {
+                callback?.invoke(UploadStatus.PENDING)
+                handleNewMedia()
+            })
+            callback?.invoke(UploadStatus.FINISHED)
+        }
     }
 
     private suspend fun handleNewMedia(){
