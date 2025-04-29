@@ -10,6 +10,7 @@ import de.busesteinkamp.domain.platform.Platform
 import de.busesteinkamp.domain.platform.PublishParameters
 import de.busesteinkamp.domain.server.Server
 import de.busesteinkamp.adapters.content.TxtContent
+import de.busesteinkamp.domain.process.UploadStatus
 import de.busesteinkamp.plugins.server.ThreadsServerPlugin
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -65,11 +66,15 @@ class ThreadsPlatform(id: UUID?, name: String, private val server: Server, priva
     @Serializable
     data class ShortLivedAccessTokenResponse(val access_token: String, val user_id: String)
 
-    override suspend fun upload(content: Content, publishParameters: PublishParameters) {
+    override fun upload(content: Content, publishParameters: PublishParameters, callback: ((UploadStatus) -> Unit)?) {
         mediaQueue.add(Pair(content, publishParameters))
-        testKeyAndReauthorize(key = authKeyRepository.find(name), callback = suspend {
-            handleNewMedia()
-        })
+        CoroutineScope(Dispatchers.IO).launch {
+            testKeyAndReauthorize(key = authKeyRepository.find(name), callback = suspend {
+                callback?.invoke(UploadStatus.PENDING)
+                handleNewMedia()
+            })
+            callback?.invoke(UploadStatus.FINISHED)
+        }
     }
 
     private suspend fun handleNewMedia(){
