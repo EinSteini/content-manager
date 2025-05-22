@@ -3,8 +3,6 @@ FROM gradle:8.13.0-jdk21-alpine AS build
 WORKDIR /app
 
 COPY settings.gradle.kts build.gradle.kts ./
-COPY abstraction/src/ abstraction/src/
-COPY abstraction/build.gradle.kts abstraction/
 COPY domain/src/ domain/src/
 COPY domain/build.gradle.kts domain/
 COPY application/src/ application/src/
