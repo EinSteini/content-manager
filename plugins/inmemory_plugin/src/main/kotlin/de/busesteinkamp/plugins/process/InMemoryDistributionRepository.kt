@@ -12,14 +12,12 @@ class InMemoryDistributionRepository : DistributionRepository {
     }
 
     override fun save(distribution: Distribution): Distribution {
-        val id = distribution.id ?: UUID.randomUUID()
-        distribution.id = id
-        distributions[id] = distribution
+        distributions[distribution.id] = distribution
         return distribution
     }
 
     override fun update(distribution: Distribution) {
-        distributions[distribution.id!!] = distribution
+        distributions[distribution.id] = distribution
     }
 
     override fun delete(distribution: Distribution) {

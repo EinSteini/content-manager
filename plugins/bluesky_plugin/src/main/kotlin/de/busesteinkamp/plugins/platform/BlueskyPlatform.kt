@@ -1,14 +1,14 @@
 package de.busesteinkamp.plugins.platform
 
+import de.busesteinkamp.adapters.content.ImageContent
+import de.busesteinkamp.adapters.content.TextContent
 import de.busesteinkamp.domain.auth.EnvRetriever
 import de.busesteinkamp.domain.content.Content
 import de.busesteinkamp.domain.content.ContentType
-import de.busesteinkamp.domain.platform.Platform
 import de.busesteinkamp.domain.platform.PublishParameters
-import de.busesteinkamp.plugins.data.*
-import de.busesteinkamp.adapters.content.TxtContent
-import de.busesteinkamp.adapters.content.ImageContent
+import de.busesteinkamp.domain.platform.SocialMediaPlatform
 import de.busesteinkamp.domain.process.UploadStatus
+import de.busesteinkamp.plugins.data.*
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
@@ -24,9 +24,9 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import java.util.*
 
-class BlueskyPlatform(id: UUID?, name: String, private val envRetriever: EnvRetriever) : Platform(id, name) {
+class BlueskyPlatform(id: UUID?, name: String, private val envRetriever: EnvRetriever) : SocialMediaPlatform(id, name) {
 
-    private val client: HttpClient = HttpClient(CIO){
+    private val client: HttpClient = HttpClient(CIO) {
         install(ContentNegotiation) {
             json(Json {
                 ignoreUnknownKeys = true
@@ -46,7 +46,7 @@ class BlueskyPlatform(id: UUID?, name: String, private val envRetriever: EnvRetr
     }
 
     override fun upload(content: Content, publishParameters: PublishParameters, callback: ((UploadStatus) -> Unit)?) {
-        if(username == "" || password == ""){
+        if (username == "" || password == "") {
             throw IllegalStateException("Bluesky credentials not set")
         }
         CoroutineScope(Dispatchers.IO).launch {
@@ -72,9 +72,9 @@ class BlueskyPlatform(id: UUID?, name: String, private val envRetriever: EnvRetr
         authToken = response.accessJwt
     }
 
-    private suspend fun handleTextPost(content: Content){
+    private suspend fun handleTextPost(content: Content) {
         println("Uploading text file to Bluesky")
-        val text = content as TxtContent
+        val text = content as TextContent
 
         val postRequest = BlueskyCreatePostRequest(
             collection = "app.bsky.feed.post",
@@ -87,19 +87,19 @@ class BlueskyPlatform(id: UUID?, name: String, private val envRetriever: EnvRetr
             bearerAuth(authToken)
             setBody(postRequest)
         }
-        if(response.status != HttpStatusCode.OK){
+        if (response.status != HttpStatusCode.OK) {
             throw IllegalStateException("Error uploading text file to Bluesky. Server responded with status ${response.status}: ${response.bodyAsText()}")
         }
         println("Text file uploaded to Bluesky")
     }
 
-    private suspend fun handleImagePost(content: Content, publishParameters: PublishParameters){
+    private suspend fun handleImagePost(content: Content, publishParameters: PublishParameters) {
         val blobRef = uploadImage(content)
         val blobRefs = listOf(
             BlueskyBlobImage(
-            alt = (content as ImageContent).altText,
-            image = blobRef.blob
-        )
+                alt = (content as ImageContent).altText,
+                image = blobRef.blob
+            )
         )
         createPostWithImages(blobRefs, publishParameters)
     }
@@ -133,16 +133,21 @@ class BlueskyPlatform(id: UUID?, name: String, private val envRetriever: EnvRetr
         println("Uploading image file to Bluesky")
         val imageFile = content as ImageContent
 
-        if(imageFile.size > 1000000){
+        if (imageFile.size > 1000000) {
             throw IllegalArgumentException("Image file too large. Maximum size is 1MB")
         }
 
         val response = client.post("https://bsky.social/xrpc/com.atproto.repo.uploadBlob") {
             bearerAuth(authToken)
-            setBody(ByteArrayContent(imageFile.get(), contentType = io.ktor.http.ContentType.parse(imageFile.contentType.text)))
+            setBody(
+                ByteArrayContent(
+                    imageFile.get(),
+                    contentType = io.ktor.http.ContentType.parse(imageFile.contentType.mimeType)
+                )
+            )
         }
 
-        if(response.status != HttpStatusCode.OK){
+        if (response.status != HttpStatusCode.OK) {
             throw IllegalStateException("Error uploading image file to Bluesky. Server responded with status ${response.status}: ${response.bodyAsText()}")
         }
         println("Image file uploaded to Bluesky")
@@ -172,7 +177,7 @@ class BlueskyPlatform(id: UUID?, name: String, private val envRetriever: EnvRetr
             setBody(postRequest)
         }
 
-        if(response.status != HttpStatusCode.OK){
+        if (response.status != HttpStatusCode.OK) {
             throw IllegalStateException("Error creating post with images on Bluesky. Server responded with status ${response.status}: ${response.bodyAsText()}")
         }
     }
@@ -189,7 +194,7 @@ class BlueskyPlatform(id: UUID?, name: String, private val envRetriever: EnvRetr
         val facets = mutableListOf<BlueskyFacet>()
 
         mentions.forEach {
-            val response = client.get("https://bsky.social/xrpc/com.atproto.identity.resolveHandle"){
+            val response = client.get("https://bsky.social/xrpc/com.atproto.identity.resolveHandle") {
                 parameter("handle", it.handle)
             }
 
@@ -234,7 +239,8 @@ class BlueskyPlatform(id: UUID?, name: String, private val envRetriever: EnvRetr
         val spans = mutableListOf<MentionSpan>()
 
         // Regex based on AT Protocol handle syntax
-        val mentionRegex = """(?:\W|^)(@([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)""".toRegex()
+        val mentionRegex =
+            """(?:\W|^)(@([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)""".toRegex()
 
         mentionRegex.findAll(text).forEach { matchResult ->
             val handle = matchResult.groups[1]?.value?.substring(1) ?: return@forEach
@@ -247,7 +253,8 @@ class BlueskyPlatform(id: UUID?, name: String, private val envRetriever: EnvRetr
         val spans = mutableListOf<UrlSpan>()
 
         // Regex for detecting URLs
-        val urlRegex = """(?:\W|^)(https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*[-a-zA-Z0-9@%_+~#//=])?)""".toRegex()
+        val urlRegex =
+            """(?:\W|^)(https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*[-a-zA-Z0-9@%_+~#//=])?)""".toRegex()
 
         urlRegex.findAll(text).forEach { matchResult ->
             val url = matchResult.groups[1]?.value ?: return@forEach

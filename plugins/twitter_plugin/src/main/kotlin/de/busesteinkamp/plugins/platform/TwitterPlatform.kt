@@ -1,19 +1,19 @@
 package de.busesteinkamp.plugins.platform
 
+import de.busesteinkamp.adapters.content.TextContent
 import de.busesteinkamp.application.process.OpenUrlUseCase
 import de.busesteinkamp.domain.auth.AuthKey
 import de.busesteinkamp.domain.auth.AuthKeyRepository
 import de.busesteinkamp.domain.auth.EnvRetriever
 import de.busesteinkamp.domain.content.Content
 import de.busesteinkamp.domain.content.ContentType
-import de.busesteinkamp.domain.platform.Platform
 import de.busesteinkamp.domain.platform.PublishParameters
+import de.busesteinkamp.domain.platform.SocialMediaPlatform
+import de.busesteinkamp.domain.process.UploadStatus
 import de.busesteinkamp.domain.server.Server
 import de.busesteinkamp.plugins.data.LongLivedAccessTokenResponse
 import de.busesteinkamp.plugins.data.ShortLivedAccessTokenResponse
 import de.busesteinkamp.plugins.data.TwitterApiTweetResponse
-import de.busesteinkamp.adapters.content.TxtContent
-import de.busesteinkamp.domain.process.UploadStatus
 import de.busesteinkamp.plugins.server.TwitterServerPlugin
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -31,11 +31,18 @@ import kotlinx.serialization.json.Json
 import java.security.MessageDigest
 import java.util.*
 
-class TwitterPlatform(id: UUID?, name: String, private val server: Server, private val authKeyRepository: AuthKeyRepository, private val openUrlUseCase: OpenUrlUseCase, private val envRetriever: EnvRetriever) : Platform(id, name) {
+class TwitterPlatform(
+    id: UUID?,
+    name: String,
+    private val server: Server,
+    private val authKeyRepository: AuthKeyRepository,
+    private val openUrlUseCase: OpenUrlUseCase,
+    private val envRetriever: EnvRetriever
+) : SocialMediaPlatform(id, name) {
 
     private var authorized = false
 
-    private val client: HttpClient = HttpClient(CIO){
+    private val client: HttpClient = HttpClient(CIO) {
         install(ContentNegotiation) {
             json(Json {
                 ignoreUnknownKeys = true
@@ -65,7 +72,7 @@ class TwitterPlatform(id: UUID?, name: String, private val server: Server, priva
         clientId = envRetriever.getEnvVariable("X_API_CLIENT_ID")
         clientSecret = envRetriever.getEnvVariable("X_API_CLIENT_SECRET")
 
-        if(clientId == "" || clientSecret == ""){
+        if (clientId == "" || clientSecret == "") {
             throw IllegalStateException("API key or secret not found in .env file")
         }
     }
@@ -81,19 +88,19 @@ class TwitterPlatform(id: UUID?, name: String, private val server: Server, priva
         }
     }
 
-    private suspend fun handleNewMedia(){
-        if(uploadInProgress){
+    private suspend fun handleNewMedia() {
+        if (uploadInProgress) {
             return
         }
-        if(mediaQueue.isEmpty()) {
+        if (mediaQueue.isEmpty()) {
             println("No media to upload")
             return
         }
 
         uploadInProgress = true
-        while(mediaQueue.isNotEmpty()){
+        while (mediaQueue.isNotEmpty()) {
             val (content, publishParameters) = mediaQueue.poll()
-            when(content.contentType){
+            when (content.contentType) {
                 ContentType.TEXT_PLAIN -> handleTextUpload(content, publishParameters)
                 else -> throw IllegalArgumentException("Unsupported media type")
             }
@@ -101,8 +108,8 @@ class TwitterPlatform(id: UUID?, name: String, private val server: Server, priva
         uploadInProgress = false
     }
 
-    private suspend fun handleTextUpload(content: Content, publishParameters: PublishParameters){
-        val textFile = content as TxtContent
+    private suspend fun handleTextUpload(content: Content, publishParameters: PublishParameters) {
+        val textFile = content as TextContent
         val url = "https://api.twitter.com/2/tweets"
 
         val response = client.post(url) {
@@ -121,10 +128,10 @@ class TwitterPlatform(id: UUID?, name: String, private val server: Server, priva
         println("Uploaded text file to Twitter. Tweet ID: ${res.data.id}")
     }
 
-    private suspend fun testKeyAndReauthorize(key: AuthKey?, callback: suspend () -> Unit){
-        if(key != null){
+    private suspend fun testKeyAndReauthorize(key: AuthKey?, callback: suspend () -> Unit) {
+        if (key != null) {
             // todo: check if key is working
-            if(key.expiresAt < Date()){
+            if (key.expiresAt < Date()) {
                 authKeyRepository.delete(name)
                 authorize()
                 return
@@ -135,7 +142,7 @@ class TwitterPlatform(id: UUID?, name: String, private val server: Server, priva
         }
 
         // If key is older than 24 hours, refresh it
-        if(key.createdAt.time < Date().time - 1000 * 60 * 60 * 24){
+        if (key.createdAt.time < Date().time - 1000 * 60 * 60 * 24) {
             val refreshedKey = refreshAccessToken(key.key)
             authKeyRepository.update(refreshedKey)
         }
@@ -145,10 +152,10 @@ class TwitterPlatform(id: UUID?, name: String, private val server: Server, priva
         callback()
     }
 
-    private suspend fun authorize(){
+    private suspend fun authorize() {
         this.authorized = false
         server.registerPlugin(twitterServerPlugin)
-        if(!server.isRunning()){
+        if (!server.isRunning()) {
             server.start()
         }
 
@@ -180,7 +187,7 @@ class TwitterPlatform(id: UUID?, name: String, private val server: Server, priva
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)
     }
 
-    suspend fun receiveAuthKey(authKey: String){
+    suspend fun receiveAuthKey(authKey: String) {
         println("Received auth key: $authKey") // Totally safe and data compliant
 
         val shortLivedToken = exchangeCodeForShortLivedToken(authKey)
@@ -209,20 +216,25 @@ class TwitterPlatform(id: UUID?, name: String, private val server: Server, priva
             }))
         }
 
-        if(response.status != HttpStatusCode.OK){
+        if (response.status != HttpStatusCode.OK) {
             throw IllegalStateException("Error exchanging code for short lived token. Server responded with status ${response.status}")
         }
 
         val accessTokenResponse: ShortLivedAccessTokenResponse = response.body()
         println("Received short lived access token: ${accessTokenResponse.access_token}")
-        return AuthKey(name, encodeToken(accessTokenResponse.access_token, accessTokenResponse.refresh_token), Date(), Date(Date().time + accessTokenResponse.expires_in * 1000))
+        return AuthKey(
+            name,
+            encodeToken(accessTokenResponse.access_token, accessTokenResponse.refresh_token),
+            Date(),
+            Date(Date().time + accessTokenResponse.expires_in * 1000)
+        )
     }
 
-    private suspend fun refreshAccessToken(refreshToken: String): AuthKey{
+    private suspend fun refreshAccessToken(refreshToken: String): AuthKey {
         val credentials = "$clientId:$clientSecret"
         val base64Credentials = Base64.getEncoder().encodeToString(credentials.toByteArray())
 
-        val response = client.post("https://api.twitter.com/2/oauth2/token"){
+        val response = client.post("https://api.twitter.com/2/oauth2/token") {
             headers {
                 append(HttpHeaders.Authorization, "Basic $base64Credentials")
                 append(HttpHeaders.ContentType, io.ktor.http.ContentType.Application.FormUrlEncoded.toString())
@@ -235,13 +247,18 @@ class TwitterPlatform(id: UUID?, name: String, private val server: Server, priva
             }))
         }
 
-        if(response.status != HttpStatusCode.OK){
+        if (response.status != HttpStatusCode.OK) {
             throw IllegalStateException("Error refreshing access token. Server responded with status ${response.status}")
         }
 
         val accessTokenResponse: LongLivedAccessTokenResponse = response.body()
         println("Received long lived access token: ${accessTokenResponse.access_token}")
-        val authKey = AuthKey(name, accessTokenResponse.access_token, Date(), Date(Date().time + accessTokenResponse.expires_in * 1000))
+        val authKey = AuthKey(
+            name,
+            accessTokenResponse.access_token,
+            Date(),
+            Date(Date().time + accessTokenResponse.expires_in * 1000)
+        )
         return authKey
     }
 

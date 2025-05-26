@@ -1,7 +1,7 @@
 package de.busesteinkamp.plugins.content
 
 import de.busesteinkamp.adapters.content.ImageContent
-import de.busesteinkamp.adapters.content.TxtContent
+import de.busesteinkamp.adapters.content.TextContent
 import de.busesteinkamp.domain.content.Content
 import de.busesteinkamp.domain.content.ContentProvider
 import de.busesteinkamp.domain.content.ContentType
@@ -23,14 +23,14 @@ class ContentFileReader(path: String) : ContentProvider {
     }
 
     private val content: Content = when (file.extension) {
-        FileExtension.TXT.extension -> getTxtContent()
+        FileExtension.TXT.extension -> getTextContent()
         FileExtension.JPG.extension, FileExtension.JPEG.extension, FileExtension.PNG.extension -> getImageContent()
         else -> throw IllegalArgumentException("Only txt files are supported")
     }
 
-    private fun getTxtContent(): TxtContent {
+    private fun getTextContent(): TextContent {
         val textContent = file.readText()
-        return TxtContent(content = textContent)
+        return TextContent(content = textContent)
     }
 
     private fun getImageContent(): ImageContent {

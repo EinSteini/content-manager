@@ -1,6 +1,6 @@
 package de.busesteinkamp.adapters.generate
 
-import de.busesteinkamp.adapters.content.TxtContent
+import de.busesteinkamp.adapters.content.TextContent
 import de.busesteinkamp.domain.generator.GenAIService
 import de.busesteinkamp.domain.generator.Generator
 
@@ -32,10 +32,10 @@ class TextPostGenerator(private val genAIService: GenAIService) : Generator {
             Generiere mir einen Threads Post zum Thema $input.
         """.trimIndent()
 
-        text =  genAIService.sendMessage(systemPrompt, userInput)
+        text = genAIService.sendMessage(systemPrompt, userInput)
     }
 
-    override fun getContent(): TxtContent {
-        return TxtContent(content = text)
+    override fun getContent(): TextContent {
+        return TextContent(content = text)
     }
 }

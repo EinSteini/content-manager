@@ -1,8 +1,5 @@
 package de.busesteinkamp.application.process
 
-import de.busesteinkamp.domain.content.Content
-import de.busesteinkamp.domain.platform.Platform
-import de.busesteinkamp.domain.platform.PublishParameters
 import de.busesteinkamp.domain.process.Distribution
 import de.busesteinkamp.domain.process.DistributionRepository
 import de.busesteinkamp.domain.process.UploadStatus
@@ -27,6 +24,7 @@ class ExecuteDistributionUseCase(
                     distribution.reportStatus(platform, status)
                 }
             } catch (e: Exception) {
+                print(e)
                 distribution.reportStatus(platform, UploadStatus.FAILED)
             } finally {
                 distributionRepository.update(distribution)

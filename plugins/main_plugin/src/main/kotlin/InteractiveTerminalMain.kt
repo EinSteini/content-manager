@@ -1,15 +1,16 @@
 package de.busesteinkamp
 
-import de.busesteinkamp.application.generate.GenerateTextContentUseCase
+import de.busesteinkamp.adapters.content.TextContent
 import de.busesteinkamp.adapters.generate.TextPostGenerator
+import de.busesteinkamp.application.generate.GenerateTextContentUseCase
 import de.busesteinkamp.application.process.ExecuteDistributionUseCase
 import de.busesteinkamp.application.process.OpenUrlUseCase
 import de.busesteinkamp.domain.auth.AuthKeyRepository
 import de.busesteinkamp.domain.generator.GenAIService
 import de.busesteinkamp.domain.generator.Generator
-import de.busesteinkamp.domain.platform.Platform
-import de.busesteinkamp.domain.platform.PlatformRepository
 import de.busesteinkamp.domain.platform.PublishParameters
+import de.busesteinkamp.domain.platform.SocialMediaPlatform
+import de.busesteinkamp.domain.platform.SocialMediaPlatformRepository
 import de.busesteinkamp.domain.process.Distribution
 import de.busesteinkamp.domain.process.DistributionRepository
 import de.busesteinkamp.domain.server.Server
@@ -19,9 +20,7 @@ import de.busesteinkamp.plugins.auth.DotenvPlugin
 import de.busesteinkamp.plugins.auth.SqliteAuthKeyRepository
 import de.busesteinkamp.plugins.client.GeminiClient
 import de.busesteinkamp.plugins.content.ContentFileReader
-import de.busesteinkamp.adapters.content.TxtContent
-import de.busesteinkamp.application.utility.BrowserOpener
-import de.busesteinkamp.plugins.media.*
+import de.busesteinkamp.plugins.media.InMemorySocialMediaPlatformRepository
 import de.busesteinkamp.plugins.platform.BlueskyPlatform
 import de.busesteinkamp.plugins.platform.ThreadsPlatform
 import de.busesteinkamp.plugins.platform.TwitterPlatform
@@ -52,7 +51,7 @@ object TerminalColors {
  * This class handles user interaction and manages the posting of content to various platforms.
  */
 class TerminalMain {
-    private val platformRepository: PlatformRepository = InMemoryPlatformRepository()
+    private val platformRepository: SocialMediaPlatformRepository = InMemorySocialMediaPlatformRepository()
     private val userRepository: UserRepository = InMemoryUserRepository()
     private val distributionRepository: DistributionRepository = InMemoryDistributionRepository()
     private val executeDistributionUseCase = ExecuteDistributionUseCase(distributionRepository)
@@ -66,9 +65,27 @@ class TerminalMain {
 
     // List of available platform factories for creating platform instances
     private val availablePlatformFactories = listOf(
-        "Twitter" to { id: UUID -> TwitterPlatform(id, "Twitter", server, authKeyRepository, openUrlUseCase, envRetriever) },
+        "Twitter" to { id: UUID ->
+            TwitterPlatform(
+                id,
+                "Twitter",
+                server,
+                authKeyRepository,
+                openUrlUseCase,
+                envRetriever
+            )
+        },
         "Bluesky" to { id: UUID -> BlueskyPlatform(id, "Bluesky", envRetriever) },
-        "Threads" to { id: UUID -> ThreadsPlatform(id, "Threads", server, authKeyRepository, openUrlUseCase, envRetriever) }
+        "Threads" to { id: UUID ->
+            ThreadsPlatform(
+                id,
+                "Threads",
+                server,
+                authKeyRepository,
+                openUrlUseCase,
+                envRetriever
+            )
+        }
     )
 
     // Currently selected user preset
@@ -231,7 +248,7 @@ class TerminalMain {
             return
         }
 
-        val user = User(name = name, platforms = platforms)
+        val user = User.create(name = name, platforms = platforms)
         currentUser = userRepository.save(user)
         println("${TerminalColors.GREEN}Created new preset: ${user.name}${TerminalColors.RESET}")
     }
@@ -264,7 +281,7 @@ class TerminalMain {
      * Prompts the user to select platforms for posting.
      * @return List of selected platforms.
      */
-    private fun selectPlatforms(): List<Platform> {
+    private fun selectPlatforms(): List<SocialMediaPlatform> {
         println("\nSelect platforms to post to (comma-separated numbers):")
         availablePlatformFactories.forEachIndexed { index, (name, _) ->
             println("${index + 1}. $name")
@@ -297,11 +314,12 @@ class TerminalMain {
             input = prompt
         )
 
-        val publishParams = PublishParameters()
-        publishParams.title = textContent.get().toString()
+        val publishParams = PublishParameters.createDefault().copy(
+            title = textContent.get().toString()
+        )
 
-        val distribution = Distribution(
-            content = TxtContent(UUID.randomUUID(), textContent.get().toString()),
+        val distribution = Distribution.create(
+            content = TextContent(UUID.randomUUID(), textContent.get().toString()),
             publishParameters = publishParams,
             platforms = platforms
         )
@@ -323,11 +341,12 @@ class TerminalMain {
         }
         if (platforms.isEmpty()) return
 
-        val publishParams = PublishParameters()
-        publishParams.title = text
+        val publishParams = PublishParameters.createDefault().copy(
+            title = text
+        )
 
-        val distribution = Distribution(
-            content = TxtContent(UUID.randomUUID(), text),
+        val distribution = Distribution.create(
+            content = TextContent(UUID.randomUUID(), text),
             publishParameters = publishParams,
             platforms = platforms
         )
@@ -354,11 +373,12 @@ class TerminalMain {
         }
         if (platforms.isEmpty()) return
 
-        val publishParams = PublishParameters()
-        publishParams.title = "Text from file"
+        val publishParams = PublishParameters.createDefault().copy(
+            title = "Text from file"
+        )
 
-        val distribution = Distribution(
-            content = TxtContent(UUID.randomUUID(), filePath),
+        val distribution = Distribution.create(
+            content = TextContent(UUID.randomUUID(), filePath),
             publishParameters = publishParams,
             platforms = platforms
         )
@@ -374,7 +394,7 @@ class TerminalMain {
         val imagePath = readlnOrNull() ?: return
 
         println("Enter alt text for the image:")
-        val altText = readlnOrNull() ?: return
+        readlnOrNull() ?: return
 
         println("Enter your text:")
         val text = readlnOrNull() ?: return
@@ -386,12 +406,13 @@ class TerminalMain {
         }
         if (platforms.isEmpty()) return
 
-        val publishParams = PublishParameters()
-        publishParams.title = text
+        val publishParams = PublishParameters.createDefault().copy(
+            title = text
+        )
 
         val imageContent = ContentFileReader(imagePath).getContent()
 
-        val distribution = Distribution(
+        val distribution = Distribution.create(
             content = imageContent,
             publishParameters = publishParams,
             platforms = platforms
@@ -427,11 +448,12 @@ class TerminalMain {
 //        }
 //        if (platforms.isEmpty()) return
 //
-//        val publishParams = PublishParameters()
-//        publishParams.title = text
+//        val publishParams = PublishParameters.createDefault().copy(
+//            title = text
+//        )
 //
-//        val distribution = Distribution(
-//            mediaFile = MultipleImageFiles(UUID.randomUUID(), imagePaths, altTexts),
+//        val distribution = Distribution.create(
+//            content = MultipleImageFiles(UUID.randomUUID(), imagePaths, altTexts),
 //            publishParameters = publishParams,
 //            platforms = platforms
 //        )
