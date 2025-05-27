@@ -6,7 +6,8 @@ import kotlinx.serialization.Serializable
 data class GeminiResponse(
     val candidates: List<Candidate>,
     val usageMetadata: UsageMetadata,
-    val modelVersion: String
+    val modelVersion: String,
+    val responseId: String,
 )
 
 @Serializable
