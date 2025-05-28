@@ -1,4 +1,4 @@
-name: Run Kotlin JUnit 5 Tests
+name: Run Unit Tests
 
 on:
   push:

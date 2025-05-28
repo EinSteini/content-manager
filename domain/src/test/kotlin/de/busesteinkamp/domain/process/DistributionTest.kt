@@ -143,4 +143,11 @@ class DistributionTest {
 
         assertEquals(DistributionStatus.COMPLETED_SUCCESSFULLY, distribution.getOverallStatus())
     }
+
+    @Test
+    fun failedTest(){
+        // This is a placeholder for a test that is expected to fail.
+        // You can implement a specific test case here that you want to fail.
+        assertTrue(false, "This test is intentionally failing")
+    }
 }
