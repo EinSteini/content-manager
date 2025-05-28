@@ -16,6 +16,7 @@ repositories {
 dependencies {
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation("io.mockk:mockk:1.14.2")
     implementation("org.hibernate:hibernate-core:6.2.6.Final") // Hibernate Core
     implementation("com.h2database:h2:2.2.224") // H2 Datenbank
     implementation("jakarta.persistence:jakarta.persistence-api:3.1.0") // JPA API
