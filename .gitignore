@@ -45,3 +45,6 @@ bin/
 *.db
 .env
 *.jks
+
+### Application ###
+logs/

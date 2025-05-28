@@ -1,6 +1,10 @@
 package de.busesteinkamp.domain.process
 
 import de.busesteinkamp.domain.content.Content
+import de.busesteinkamp.domain.events.AggregateRoot
+import de.busesteinkamp.domain.events.DistributionCompletedEvent
+import de.busesteinkamp.domain.events.DistributionFailedEvent
+import de.busesteinkamp.domain.events.DistributionScheduledEvent
 import de.busesteinkamp.domain.platform.PublishParameters
 import de.busesteinkamp.domain.platform.SocialMediaPlatform
 import java.time.Instant
@@ -12,12 +16,12 @@ import java.util.*
  * All modifications to the distribution state should go through this aggregate root.
  */
 class Distribution private constructor(
-    val id: UUID,
+    id: UUID,
     val content: Content,
     val publishParameters: PublishParameters,
     private val _platforms: List<SocialMediaPlatform>,
     val createdAt: Date = Date.from(Instant.now())
-) {
+) : AggregateRoot(id) {
     // Encapsulated collection - external access only through methods
     val platforms: List<SocialMediaPlatform> get() = _platforms.toList()
 
@@ -36,7 +40,35 @@ class Distribution private constructor(
     fun reportStatus(platform: SocialMediaPlatform, status: UploadStatus) {
         require(platform in _platforms) { "Platform ${platform.name} is not part of this distribution" }
         println("Statusreport for platform ${platform.name}: $status")
+        
+        val previousStatus = _uploadStatuses[platform]
         _uploadStatuses[platform] = status
+        
+        // Publish domain events based on status changes
+        when (status) {
+            UploadStatus.FINISHED -> {
+                addDomainEvent(
+                    DistributionCompletedEvent.createSuccess(
+                        distributionId = id,
+                        platformName = platform.name,
+                        contentId = content.id
+                    )
+                )
+            }
+            UploadStatus.FAILED -> {
+                addDomainEvent(
+                    DistributionFailedEvent.create(
+                        distributionId = id,
+                        platformName = platform.name,
+                        reason = "Upload failed",
+                        contentId = content.id
+                    )
+                )
+            }
+            else -> {
+                // No event for INITIAL or PENDING status
+            }
+        }
     }
 
     /**
@@ -86,12 +118,26 @@ class Distribution private constructor(
             publishParameters: PublishParameters,
             platforms: List<SocialMediaPlatform>
         ): Distribution {
-            return Distribution(
+            val distribution = Distribution(
                 id = UUID.randomUUID(),
                 content = content,
                 publishParameters = publishParameters,
                 _platforms = platforms
             )
+            
+            // Publish domain event for distribution scheduling
+            val scheduledTime = publishParameters.publishDate.toInstant()
+            distribution.addDomainEvent(
+                DistributionScheduledEvent.create(
+                    distributionId = distribution.id,
+                    scheduledTime = scheduledTime,
+                    platformNames = platforms.map { it.name },
+                    contentId = content.id,
+                    title = publishParameters.title
+                )
+            )
+            
+            return distribution
         }
     }
 }

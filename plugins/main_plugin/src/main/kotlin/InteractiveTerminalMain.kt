@@ -6,6 +6,7 @@ import de.busesteinkamp.application.generate.GenerateTextContentUseCase
 import de.busesteinkamp.application.process.ExecuteDistributionUseCase
 import de.busesteinkamp.application.process.OpenUrlUseCase
 import de.busesteinkamp.domain.auth.AuthKeyRepository
+import de.busesteinkamp.domain.events.DomainEventPublisher
 import de.busesteinkamp.domain.generator.GenAIService
 import de.busesteinkamp.domain.generator.Generator
 import de.busesteinkamp.domain.platform.PublishParameters
@@ -20,6 +21,7 @@ import de.busesteinkamp.plugins.auth.DotenvPlugin
 import de.busesteinkamp.plugins.auth.SqliteAuthKeyRepository
 import de.busesteinkamp.plugins.client.GeminiClient
 import de.busesteinkamp.plugins.content.ContentFileReader
+import de.busesteinkamp.plugins.logging.TextFileEventLogger
 import de.busesteinkamp.plugins.media.InMemorySocialMediaPlatformRepository
 import de.busesteinkamp.plugins.platform.BlueskyPlatform
 import de.busesteinkamp.plugins.platform.ThreadsPlatform
@@ -51,10 +53,12 @@ object TerminalColors {
  * This class handles user interaction and manages the posting of content to various platforms.
  */
 class TerminalMain {
+    private val fileLogger = TextFileEventLogger()
+    private val eventPublisher: DomainEventPublisher = fileLogger
     private val platformRepository: SocialMediaPlatformRepository = InMemorySocialMediaPlatformRepository()
     private val userRepository: UserRepository = InMemoryUserRepository()
     private val distributionRepository: DistributionRepository = InMemoryDistributionRepository()
-    private val executeDistributionUseCase = ExecuteDistributionUseCase(distributionRepository)
+    private val executeDistributionUseCase = ExecuteDistributionUseCase(distributionRepository, eventPublisher)
     private val server: Server = KtorServer(8443)
     private val authKeyRepository: AuthKeyRepository = SqliteAuthKeyRepository()
     private val openUrlUseCase = OpenUrlUseCase(false, DesktopBrowserOpener())
@@ -158,6 +162,11 @@ class TerminalMain {
      * Starts the terminal application and handles user interaction.
      */
     fun start() = runBlocking {
+        // Add shutdown hook to properly close the file logger session
+        Runtime.getRuntime().addShutdownHook(Thread {
+            fileLogger.closeSession()
+        })
+
         server.start()
         displayWelcome()
 
@@ -249,6 +258,15 @@ class TerminalMain {
         }
 
         val user = User.create(name = name, platforms = platforms)
+
+        // Publish user creation events
+        if (user.hasUncommittedEvents()) {
+            user.getUncommittedEvents().forEach { event ->
+                eventPublisher.publish(event)
+            }
+            user.markEventsAsCommitted()
+        }
+
         currentUser = userRepository.save(user)
         println("${TerminalColors.GREEN}Created new preset: ${user.name}${TerminalColors.RESET}")
     }

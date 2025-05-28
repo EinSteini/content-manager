@@ -28,6 +28,7 @@ dependencies {
     implementation(project(":plugins:dotenv_plugin"))
     implementation(project(":plugins:systemenv_plugin"))
     implementation(project(":plugins:filereader_plugin"))
+    implementation(project(":plugins:textfile_logging_plugin"))
 }
 
 tasks.test {

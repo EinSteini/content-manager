@@ -1,5 +1,7 @@
 package de.busesteinkamp.domain.user
 
+import de.busesteinkamp.domain.events.AggregateRoot
+import de.busesteinkamp.domain.events.UserCreatedEvent
 import de.busesteinkamp.domain.platform.SocialMediaPlatform
 import java.util.*
 
@@ -9,10 +11,10 @@ import java.util.*
  * A user can have multiple social media platforms associated with them.
  */
 class User private constructor(
-    val id: UUID,
+    id: UUID,
     var name: String,
     private val _platforms: MutableList<SocialMediaPlatform> = mutableListOf()
-) {
+) : AggregateRoot(id) {
     // Encapsulated collection - external access only through methods
     val platforms: List<SocialMediaPlatform> get() = _platforms.toList()
     
@@ -66,6 +68,16 @@ class User private constructor(
                 name = name
             )
             platforms.forEach { user.addPlatform(it) }
+            
+            // Publish domain event for user creation
+            user.addDomainEvent(
+                UserCreatedEvent.create(
+                    userId = user.id,
+                    userName = user.name,
+                    platformCount = platforms.size
+                )
+            )
+            
             return user
         }
         
