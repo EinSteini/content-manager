@@ -25,7 +25,7 @@ class ContentFileReader(path: String) : ContentProvider {
     private val content: Content = when (file.extension) {
         FileExtension.TXT.extension -> getTextContent()
         FileExtension.JPG.extension, FileExtension.JPEG.extension, FileExtension.PNG.extension -> getImageContent()
-        else -> throw IllegalArgumentException("Only txt files are supported")
+        else -> throw IllegalArgumentException("Only txt, jpg and png files are supported")
     }
 
     private fun getTextContent(): TextContent {
@@ -36,8 +36,8 @@ class ContentFileReader(path: String) : ContentProvider {
     private fun getImageContent(): ImageContent {
         val fileContent = file.readBytes()
         val contentType = when (file.extension) {
-            "jpg", "jpeg" -> ContentType.IMAGE_JPEG
-            "png" -> ContentType.IMAGE_PNG
+            FileExtension.JPG.extension, FileExtension.JPEG.extension -> ContentType.IMAGE_JPEG
+            FileExtension.PNG.extension -> ContentType.IMAGE_PNG
             else -> throw IllegalArgumentException("Only jpg and png files are supported")
         }
         return ImageContent(fileContent = fileContent, contentType = contentType)
