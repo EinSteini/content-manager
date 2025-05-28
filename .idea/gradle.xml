@@ -24,6 +24,7 @@
             <option value="$PROJECT_DIR$/plugins/main_plugin" />
             <option value="$PROJECT_DIR$/plugins/sqlite_authkey_storage_plugin" />
             <option value="$PROJECT_DIR$/plugins/systemenv_plugin" />
+            <option value="$PROJECT_DIR$/plugins/textfile_logging_plugin" />
             <option value="$PROJECT_DIR$/plugins/threads_plugin" />
             <option value="$PROJECT_DIR$/plugins/twitter_plugin" />
           </set>

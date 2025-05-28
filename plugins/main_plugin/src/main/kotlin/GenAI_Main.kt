@@ -6,6 +6,7 @@ import de.busesteinkamp.application.generate.GenerateTextContentUseCase
 import de.busesteinkamp.application.process.ExecuteDistributionUseCase
 import de.busesteinkamp.application.process.OpenUrlUseCase
 import de.busesteinkamp.domain.auth.AuthKeyRepository
+import de.busesteinkamp.domain.events.DomainEventPublisher
 import de.busesteinkamp.domain.generator.GenAIService
 import de.busesteinkamp.domain.generator.Generator
 import de.busesteinkamp.domain.platform.PublishParameters
@@ -18,6 +19,7 @@ import de.busesteinkamp.domain.user.User
 import de.busesteinkamp.plugins.auth.DotenvPlugin
 import de.busesteinkamp.plugins.auth.SqliteAuthKeyRepository
 import de.busesteinkamp.plugins.client.GeminiClient
+import de.busesteinkamp.plugins.logging.TextFileEventLogger
 import de.busesteinkamp.plugins.media.InMemorySocialMediaPlatformRepository
 import de.busesteinkamp.plugins.platform.ThreadsPlatform
 import de.busesteinkamp.plugins.process.InMemoryDistributionRepository
@@ -28,10 +30,12 @@ import java.util.*
 
 
 fun main(): Unit = runBlocking {
+    val fileLogger = TextFileEventLogger()
+    val eventPublisher: DomainEventPublisher = fileLogger
     val platformRepository: SocialMediaPlatformRepository = InMemorySocialMediaPlatformRepository()
     val distributionRepository: DistributionRepository = InMemoryDistributionRepository()
 
-    val executeDistributionUseCase = ExecuteDistributionUseCase(distributionRepository)
+    val executeDistributionUseCase = ExecuteDistributionUseCase(distributionRepository, eventPublisher)
 
     val server: Server = KtorServer(8443)
     val authKeyRepository: AuthKeyRepository = SqliteAuthKeyRepository()
@@ -53,6 +57,14 @@ fun main(): Unit = runBlocking {
     val threads: SocialMediaPlatform =
         ThreadsPlatform(UUID.randomUUID(), "Threads", server, authKeyRepository, openUrlUseCase, dotenv)
     val mainUser = User.create("main", listOf(threads))
+
+    // Publish user creation events
+    if (mainUser.hasUncommittedEvents()) {
+        mainUser.getUncommittedEvents().forEach { event ->
+            eventPublisher.publish(event)
+        }
+        mainUser.markEventsAsCommitted()
+    }
     platformRepository.save(threads)
     val publishParameters = PublishParameters.createDefault().copy(
         title = "New Post"
@@ -63,6 +75,11 @@ fun main(): Unit = runBlocking {
         publishParameters = publishParameters,
         platforms = mainUser.platforms
     )
+
+    // Add shutdown hook to properly close the file logger session
+    Runtime.getRuntime().addShutdownHook(Thread {
+        fileLogger.closeSession()
+    })
 
     server.start()
     executeDistributionUseCase.execute(distribution)

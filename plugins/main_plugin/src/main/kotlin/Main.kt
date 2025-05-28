@@ -5,6 +5,7 @@ import de.busesteinkamp.application.process.ExecuteDistributionUseCase
 import de.busesteinkamp.application.process.OpenUrlUseCase
 import de.busesteinkamp.domain.auth.AuthKeyRepository
 import de.busesteinkamp.domain.content.Content
+import de.busesteinkamp.domain.events.DomainEventPublisher
 import de.busesteinkamp.domain.platform.PublishParameters
 import de.busesteinkamp.domain.platform.SocialMediaPlatform
 import de.busesteinkamp.domain.platform.SocialMediaPlatformRepository
@@ -15,6 +16,7 @@ import de.busesteinkamp.domain.user.User
 import de.busesteinkamp.domain.user.UserRepository
 import de.busesteinkamp.plugins.auth.SqliteAuthKeyRepository
 import de.busesteinkamp.plugins.content.ContentFileReader
+import de.busesteinkamp.plugins.logging.TextFileEventLogger
 import de.busesteinkamp.plugins.media.InMemorySocialMediaPlatformRepository
 import de.busesteinkamp.plugins.platform.BlueskyPlatform
 import de.busesteinkamp.plugins.process.InMemoryDistributionRepository
@@ -28,10 +30,12 @@ open class Main
 
 fun main(args: Array<String>): Unit = runBlocking {
     // Hier die Abhängigkeiten manuell erstellen und injizieren
+    val fileLogger = TextFileEventLogger()
+    val eventPublisher: DomainEventPublisher = fileLogger
     val platformRepository: SocialMediaPlatformRepository = InMemorySocialMediaPlatformRepository()
     val userRepository: UserRepository = InMemoryUserRepository()
     val distributionRepository: DistributionRepository = InMemoryDistributionRepository()
-    val executeDistributionUseCase = ExecuteDistributionUseCase(distributionRepository)
+    val executeDistributionUseCase = ExecuteDistributionUseCase(distributionRepository, eventPublisher)
     val server: Server = KtorServer(8443)
     val authKeyRepository: AuthKeyRepository = SqliteAuthKeyRepository()
     val openUrlUseCase = OpenUrlUseCase(true, DesktopBrowserOpener())
@@ -57,6 +61,15 @@ fun main(args: Array<String>): Unit = runBlocking {
     val bsky: SocialMediaPlatform = BlueskyPlatform(UUID.randomUUID(), "Bluesky", envRetriever)
 //    val twitter: Platform = TwitterPlatform(UUID.randomUUID(), "Twitter", server, authKeyRepository, openUrlUseCase, envRetriever)
     val mainUser: User = User.create("main", listOf(bsky))
+
+    // Publish user creation events
+    if (mainUser.hasUncommittedEvents()) {
+        mainUser.getUncommittedEvents().forEach { event ->
+            eventPublisher.publish(event)
+        }
+        mainUser.markEventsAsCommitted()
+    }
+
     platformRepository.save(bsky)
     val publishParameters: PublishParameters =
         PublishParameters.createDefault().copy(title = "Und sogar bis zu 4 Bilder klappen!")
@@ -72,6 +85,11 @@ fun main(args: Array<String>): Unit = runBlocking {
         publishParameters = publishParameters,
         platforms = listOf(bsky)
     )
+
+    // Add shutdown hook to properly close the file logger session
+    Runtime.getRuntime().addShutdownHook(Thread {
+        fileLogger.closeSession()
+    })
 
     server.start()
     executeDistributionUseCase.execute(distribution)

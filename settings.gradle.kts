@@ -37,3 +37,5 @@ include("plugins:systemenv_plugin")
 findProject(":plugins:systemenv_plugin")?.name = "systemenv_plugin"
 include("plugins:filereader_plugin")
 findProject(":plugins:filereader_plugin")?.name = "filereader_plugin"
+include("plugins:textfile_logging_plugin")
+findProject(":plugins:textfile_logging_plugin")?.name = "textfile_logging_plugin"
