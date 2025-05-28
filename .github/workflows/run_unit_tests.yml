@@ -24,7 +24,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Run all tests with details
-        run: ./gradlew test --info --stacktrace
+        run: ./gradlew test --continue
 
       - name: Upload all test reports
         if: failure()
