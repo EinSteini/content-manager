@@ -48,7 +48,7 @@ class Distribution private constructor(
         when (status) {
             UploadStatus.FINISHED -> {
                 addDomainEvent(
-                    DistributionCompletedEvent.createSuccess(
+                    DistributionCompletedEvent.create(
                         distributionId = id,
                         platformName = platform.name,
                         contentId = content.id

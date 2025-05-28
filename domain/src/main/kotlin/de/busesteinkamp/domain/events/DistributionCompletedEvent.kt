@@ -14,18 +14,17 @@ data class DistributionCompletedEvent(
     override val createdBy: String = "DistributionAggregate",
     val distributionId: UUID,
     val platformName: String,
-    val success: Boolean,
     val contentId: UUID,
     val executionDurationMs: Long? = null,
     val platformPostId: String? = null
 ) : DomainEvent {
     override val eventType: String = "DistributionCompleted"
-    
+
     companion object {
         /**
          * Factory method to create a DistributionCompletedEvent for successful completion
          */
-        fun createSuccess(
+        fun create(
             distributionId: UUID,
             platformName: String,
             contentId: UUID,
@@ -36,30 +35,9 @@ data class DistributionCompletedEvent(
             return DistributionCompletedEvent(
                 distributionId = distributionId,
                 platformName = platformName,
-                success = true,
                 contentId = contentId,
                 executionDurationMs = executionDurationMs,
                 platformPostId = platformPostId,
-                actorId = actorId
-            )
-        }
-        
-        /**
-         * Factory method to create a DistributionCompletedEvent for failed completion
-         */
-        fun createFailure(
-            distributionId: UUID,
-            platformName: String,
-            contentId: UUID,
-            executionDurationMs: Long? = null,
-            actorId: String = "system"
-        ): DistributionCompletedEvent {
-            return DistributionCompletedEvent(
-                distributionId = distributionId,
-                platformName = platformName,
-                success = false,
-                contentId = contentId,
-                executionDurationMs = executionDurationMs,
                 actorId = actorId
             )
         }
