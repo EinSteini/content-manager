@@ -6,10 +6,10 @@ import de.busesteinkamp.domain.auth.AuthKeyRepository
 import de.busesteinkamp.domain.auth.EnvRetriever
 import de.busesteinkamp.domain.content.Content
 import de.busesteinkamp.domain.content.ContentType
-import de.busesteinkamp.domain.platform.Platform
+import de.busesteinkamp.domain.platform.SocialMediaPlatform
 import de.busesteinkamp.domain.platform.PublishParameters
 import de.busesteinkamp.domain.server.Server
-import de.busesteinkamp.adapters.content.TxtContent
+import de.busesteinkamp.adapters.content.TextContent
 import de.busesteinkamp.domain.process.UploadStatus
 import de.busesteinkamp.plugins.server.ThreadsServerPlugin
 import io.ktor.client.*
@@ -25,7 +25,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.util.*
 
-class ThreadsPlatform(id: UUID?, name: String, private val server: Server, private val authKeyRepository: AuthKeyRepository, private val openUrlUseCase: OpenUrlUseCase, private val envRetriever: EnvRetriever) : Platform(id, name) {
+class ThreadsPlatform(id: UUID?, name: String, private val server: Server, private val authKeyRepository: AuthKeyRepository, private val openUrlUseCase: OpenUrlUseCase, private val envRetriever: EnvRetriever) : SocialMediaPlatform(id, name) {
 
     private var authorized = false
 
@@ -99,7 +99,7 @@ class ThreadsPlatform(id: UUID?, name: String, private val server: Server, priva
 
     private suspend fun uploadText(content: Content){
         println("Uploading text file to Threads")
-        val textFile = content as TxtContent
+        val textFile = content as TextContent
 
         var response = client.post("https://graph.threads.net/v1.0/me/threads"){
             parameter("media_type", "TEXT")

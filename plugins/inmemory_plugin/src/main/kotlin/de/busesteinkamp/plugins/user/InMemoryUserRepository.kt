@@ -13,8 +13,6 @@ class InMemoryUserRepository : UserRepository {
     }
 
     override fun save(user: User): User {
-        val id = user.id ?: UUID.randomUUID()
-        user.id = id
         users.add(user)
         return user
     }
