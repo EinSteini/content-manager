@@ -14,14 +14,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up JDK
+      - name: Set up JDK and Gradle
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Grant execute permission for Gradle wrapper
-        run: chmod +x ./gradlew
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Run all tests with detailed output
         run: |
@@ -50,28 +50,28 @@ jobs:
           for file in $(find . -name "TEST-*.xml" -path "*/build/test-results/test/*"); do
             if [ -f "$file" ]; then
               module=$(echo "$file" | sed 's|.*/\([^/]*\)/build/test-results/test/.*|\1|')
-              
+          
               # Extract test statistics from XML
               tests=$(grep -o 'tests="[0-9]*"' "$file" | sed 's/tests="\([0-9]*\)"/\1/' | head -1)
               failures=$(grep -o 'failures="[0-9]*"' "$file" | sed 's/failures="\([0-9]*\)"/\1/' | head -1)
               errors=$(grep -o 'errors="[0-9]*"' "$file" | sed 's/errors="\([0-9]*\)"/\1/' | head -1)
               skipped=$(grep -o 'skipped="[0-9]*"' "$file" | sed 's/skipped="\([0-9]*\)"/\1/' | head -1)
-              
+          
               # Default to 0 if not found
               tests=${tests:-0}
               failures=${failures:-0}
               errors=${errors:-0}
               skipped=${skipped:-0}
-              
+          
               passed=$((tests - failures - errors - skipped))
-              
+          
               # Add to totals
               total_tests=$((total_tests + tests))
               total_passed=$((total_passed + passed))
               total_failures=$((total_failures + failures))
               total_errors=$((total_errors + errors))
               total_skipped=$((total_skipped + skipped))
-              
+          
               # Check if this module has failures
               if [ $failures -gt 0 ] || [ $errors -gt 0 ]; then
                 has_failures=true
@@ -79,10 +79,10 @@ jobs:
               else
                 module_status="✅ $module"
               fi
-              
+          
               # Add row to summary table
               echo "| $module_status | $passed | $failures | $errors | $skipped | $tests |" >> $GITHUB_STEP_SUMMARY
-              
+          
               # Log details to console for debugging
               echo ""
               echo "📊 Module: $module"
@@ -92,17 +92,17 @@ jobs:
               echo "🚨 Errors: $errors"
               echo "⏭️ Skipped: $skipped"
               echo "📈 Total: $tests"
-              
+          
               # Show failed tests details in console and summary
               if [ $failures -gt 0 ] || [ $errors -gt 0 ]; then
                 echo ""
                 echo "🔍 Failed Test Details:"
-                
+          
                 # Add failed tests to summary
                 echo "" >> $GITHUB_STEP_SUMMARY
                 echo "### ❌ Failed Tests in $module" >> $GITHUB_STEP_SUMMARY
                 echo '```' >> $GITHUB_STEP_SUMMARY
-                
+          
                 # Extract and display failed test names and reasons
                 grep -A 20 '<failure\|<error' "$file" | while IFS= read -r line; do
                   # Extract test names from testcase tags
@@ -121,7 +121,7 @@ jobs:
                     fi
                   fi
                 done
-                
+          
                 echo '```' >> $GITHUB_STEP_SUMMARY
               fi
             fi
