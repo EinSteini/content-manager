@@ -15,7 +15,6 @@ dependencies {
     implementation(project(":adapters"))
     implementation(project(":application"))
     implementation(project(":domain"))
-    implementation(project(":plugins:ktor_server_plugin"))
     implementation("com.github.scribejava:scribejava-apis:8.3.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
     implementation("io.ktor:ktor-server-core:3.1.0")

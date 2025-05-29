@@ -1,23 +1,25 @@
 package de.busesteinkamp.plugins.server
 
+import de.busesteinkamp.adapters.server.DefaultRouteDefinition
+import de.busesteinkamp.adapters.server.HttpMethod
+import de.busesteinkamp.adapters.server.HttpStatusCode
 import de.busesteinkamp.domain.server.Server
 import de.busesteinkamp.domain.server.ServerPlugin
 import de.busesteinkamp.plugins.platform.ThreadsPlatform
-import io.ktor.http.*
-import io.ktor.server.response.*
+
 
 class ThreadsServerPlugin(private val platform: ThreadsPlatform, private val path: String) : ServerPlugin {
 
     override fun onLoad(server: Server) {
-        server.addRoute(KtorRouteDefinition(path, HttpMethod.Get, {
-            call.respond(HttpStatusCode.OK)
-            val authKey = call.request.queryParameters["code"]
+        server.addRoute(DefaultRouteDefinition(path, HttpMethod.GET) {
+            response.statusCode = HttpStatusCode.OK
+            val authKey = request.queryParameters["code"]
             if (authKey != null) {
                 platform.receiveAuthKey(authKey)
-            }else{
-                call.respond(HttpStatusCode.BadRequest)
+            } else {
+                response.statusCode = HttpStatusCode.BAD_REQUEST
             }
-        }))
+        })
     }
 
     override fun onRemove(server: Server) {
