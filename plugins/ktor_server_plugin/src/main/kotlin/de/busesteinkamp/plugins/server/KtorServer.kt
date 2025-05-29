@@ -1,5 +1,6 @@
 package de.busesteinkamp.plugins.server
 
+import de.busesteinkamp.adapters.server.DefaultRouteDefinition
 import de.busesteinkamp.domain.server.RouteDefinition
 import de.busesteinkamp.domain.server.Server
 import de.busesteinkamp.domain.server.ServerPlugin
@@ -52,11 +53,12 @@ class KtorServer(private val port: Int) : Server {
     }
 
     override fun addRoute(route: RouteDefinition) {
-        if (route !is KtorRouteDefinition) {
-            throw IllegalArgumentException("Route must be of type KtorRouteDefinition")
+        if (route !is DefaultRouteDefinition) {
+            throw IllegalArgumentException("Only DefaultRouteDefinition is supported")
         }
+        val ktorRoute = KtorRouteDefinition.from(route)
         println("Adding route: ${route.path}")
-        dynamicRoutes[route.path] = route
+        dynamicRoutes[route.path] = ktorRoute
         restartServer()
     }
 

@@ -9,15 +9,15 @@ import io.ktor.server.response.*
 class ThreadsServerPlugin(private val platform: ThreadsPlatform, private val path: String) : ServerPlugin {
 
     override fun onLoad(server: Server) {
-        server.addRoute(KtorRouteDefinition(path, HttpMethod.Get, {
+        server.addRoute(KtorRouteDefinition(path, HttpMethod.Get) {
             call.respond(HttpStatusCode.OK)
             val authKey = call.request.queryParameters["code"]
             if (authKey != null) {
                 platform.receiveAuthKey(authKey)
-            }else{
+            } else {
                 call.respond(HttpStatusCode.BadRequest)
             }
-        }))
+        })
     }
 
     override fun onRemove(server: Server) {
