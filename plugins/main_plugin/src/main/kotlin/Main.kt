@@ -5,6 +5,7 @@ import de.busesteinkamp.application.process.ExecuteDistributionUseCase
 import de.busesteinkamp.application.process.OpenUrlUseCase
 import de.busesteinkamp.domain.auth.AuthKeyRepository
 import de.busesteinkamp.domain.content.Content
+import de.busesteinkamp.domain.content.ContentProvider
 import de.busesteinkamp.domain.events.DomainEventPublisher
 import de.busesteinkamp.domain.platform.PublishParameters
 import de.busesteinkamp.domain.platform.SocialMediaPlatform
@@ -53,8 +54,11 @@ fun main(args: Array<String>): Unit = runBlocking {
         return@runBlocking
     }
 
-    val textContent: Content = ContentFileReader(examplePostPath).getContent()
-    val imageContent: Content = ContentFileReader(exampleImagePath).getContent()
+    val textProvider: ContentProvider = ContentFileReader(examplePostPath)
+    val imageProvider: ContentProvider = ContentFileReader(exampleImagePath)
+
+    val textContent: Content = textProvider.getContent()
+    val imageContent: Content = imageProvider.getContent()
 
 //    val threads: SocialMediaPlatform =
 //        ThreadsPlatform(UUID.randomUUID(), "Threads", server, authKeyRepository, openUrlUseCase, envRetriever)
