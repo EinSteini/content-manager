@@ -46,7 +46,7 @@ jobs:
           echo "| Module | ✅ Passed | ❌ Failed | 🚨 Errors | ⏭️ Skipped | 📈 Total |" >> $GITHUB_STEP_SUMMARY
           echo "|--------|-----------|-----------|------------|-------------|----------|" >> $GITHUB_STEP_SUMMARY
           
-          # Process each test result file
+          # First pass: Create the complete table
           for file in $(find . -name "TEST-*.xml" -path "*/build/test-results/test/*"); do
             if [ -f "$file" ]; then
               module=$(echo "$file" | sed 's|.*/\([^/]*\)/build/test-results/test/.*|\1|')
@@ -92,14 +92,29 @@ jobs:
               echo "🚨 Errors: $errors"
               echo "⏭️ Skipped: $skipped"
               echo "📈 Total: $tests"
+            fi
+          done
           
-              # Show failed tests details in console and summary
+          # Add spacing after table
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Second pass: Show failed test details after the complete table
+          for file in $(find . -name "TEST-*.xml" -path "*/build/test-results/test/*"); do
+            if [ -f "$file" ]; then
+              module=$(echo "$file" | sed 's|.*/\([^/]*\)/build/test-results/test/.*|\1|')
+              
+              # Extract test statistics from XML
+              failures=$(grep -o 'failures="[0-9]*"' "$file" | sed 's/failures="\([0-9]*\)"/\1/' | head -1)
+              errors=$(grep -o 'errors="[0-9]*"' "$file" | sed 's/errors="\([0-9]*\)"/\1/' | head -1)
+              failures=${failures:-0}
+              errors=${errors:-0}
+              
+              # Show failed tests details only if there are failures or errors
               if [ $failures -gt 0 ] || [ $errors -gt 0 ]; then
                 echo ""
-                echo "🔍 Failed Test Details:"
+                echo "🔍 Failed Test Details for $module:"
           
                 # Add failed tests to summary
-                echo "" >> $GITHUB_STEP_SUMMARY
                 echo "### ❌ Failed Tests in $module" >> $GITHUB_STEP_SUMMARY
                 echo '```' >> $GITHUB_STEP_SUMMARY
           
@@ -123,12 +138,12 @@ jobs:
                 done
           
                 echo '```' >> $GITHUB_STEP_SUMMARY
+                echo "" >> $GITHUB_STEP_SUMMARY
               fi
             fi
           done
           
           # Add total summary
-          echo "" >> $GITHUB_STEP_SUMMARY
           echo "## 📈 Overall Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
