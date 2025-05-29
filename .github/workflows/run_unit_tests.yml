@@ -14,25 +14,193 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up JDK
+      - name: Set up JDK and Gradle
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Grant execute permission for Gradle wrapper
-        run: chmod +x ./gradlew
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
 
-      - name: Run all tests with details
-        run: ./gradlew test --continue
+      - name: Run all tests with detailed output
+        run: |
+          ./gradlew test --continue --info --stacktrace
+        continue-on-error: true
 
-      - name: Upload all test reports
+      - name: Generate Test Results Summary
+        if: always()
+        run: |
+          echo "# 📊 Test Results Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Initialize counters
+          total_tests=0
+          total_passed=0
+          total_failures=0
+          total_errors=0
+          total_skipped=0
+          has_failures=false
+          
+          # Create summary table header
+          echo "| Module | ✅ Passed | ❌ Failed | 🚨 Errors | ⏭️ Skipped | 📈 Total |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-----------|-----------|------------|-------------|----------|" >> $GITHUB_STEP_SUMMARY
+          
+          # First pass: Create the complete table
+          for file in $(find . -name "TEST-*.xml" -path "*/build/test-results/test/*"); do
+            if [ -f "$file" ]; then
+              module=$(echo "$file" | sed 's|.*/\([^/]*\)/build/test-results/test/.*|\1|')
+          
+              # Extract test statistics from XML
+              tests=$(grep -o 'tests="[0-9]*"' "$file" | sed 's/tests="\([0-9]*\)"/\1/' | head -1)
+              failures=$(grep -o 'failures="[0-9]*"' "$file" | sed 's/failures="\([0-9]*\)"/\1/' | head -1)
+              errors=$(grep -o 'errors="[0-9]*"' "$file" | sed 's/errors="\([0-9]*\)"/\1/' | head -1)
+              skipped=$(grep -o 'skipped="[0-9]*"' "$file" | sed 's/skipped="\([0-9]*\)"/\1/' | head -1)
+          
+              # Default to 0 if not found
+              tests=${tests:-0}
+              failures=${failures:-0}
+              errors=${errors:-0}
+              skipped=${skipped:-0}
+          
+              passed=$((tests - failures - errors - skipped))
+          
+              # Add to totals
+              total_tests=$((total_tests + tests))
+              total_passed=$((total_passed + passed))
+              total_failures=$((total_failures + failures))
+              total_errors=$((total_errors + errors))
+              total_skipped=$((total_skipped + skipped))
+          
+              # Check if this module has failures
+              if [ $failures -gt 0 ] || [ $errors -gt 0 ]; then
+                has_failures=true
+                module_status="❌ $module"
+              else
+                module_status="✅ $module"
+              fi
+          
+              # Add row to summary table
+              echo "| $module_status | $passed | $failures | $errors | $skipped | $tests |" >> $GITHUB_STEP_SUMMARY
+          
+              # Log details to console for debugging
+              echo ""
+              echo "📊 Module: $module"
+              echo "----------------------------------------"
+              echo "✅ Passed: $passed"
+              echo "❌ Failed: $failures"
+              echo "🚨 Errors: $errors"
+              echo "⏭️ Skipped: $skipped"
+              echo "📈 Total: $tests"
+            fi
+          done
+          
+          # Add spacing after table
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Second pass: Show failed test details after the complete table
+          for file in $(find . -name "TEST-*.xml" -path "*/build/test-results/test/*"); do
+            if [ -f "$file" ]; then
+              module=$(echo "$file" | sed 's|.*/\([^/]*\)/build/test-results/test/.*|\1|')
+              
+              # Extract test statistics from XML
+              failures=$(grep -o 'failures="[0-9]*"' "$file" | sed 's/failures="\([0-9]*\)"/\1/' | head -1)
+              errors=$(grep -o 'errors="[0-9]*"' "$file" | sed 's/errors="\([0-9]*\)"/\1/' | head -1)
+              failures=${failures:-0}
+              errors=${errors:-0}
+              
+              # Show failed tests details only if there are failures or errors
+              if [ $failures -gt 0 ] || [ $errors -gt 0 ]; then
+                echo ""
+                echo "🔍 Failed Test Details for $module:"
+          
+                # Add failed tests to summary
+                echo "### ❌ Failed Tests in $module" >> $GITHUB_STEP_SUMMARY
+                echo '```' >> $GITHUB_STEP_SUMMARY
+          
+                # Extract and display failed test names and reasons
+                grep -A 20 '<failure\|<error' "$file" | while IFS= read -r line; do
+                  # Extract test names from testcase tags
+                  if echo "$line" | grep -q 'testcase.*name='; then
+                    test_name=$(echo "$line" | sed 's/.*name="\([^"]*\)".*/\1/')
+                    echo "Test: $test_name" >> $GITHUB_STEP_SUMMARY
+                    echo "Test: $test_name"
+                  fi
+                  # Extract failure/error messages
+                  if echo "$line" | grep -qE '<failure|<error'; then
+                    message=$(echo "$line" | sed 's/<[^>]*>//g' | sed 's/^[[:space:]]*//')
+                    if [ -n "$message" ]; then
+                      echo "Reason: $message" >> $GITHUB_STEP_SUMMARY
+                      echo "Reason: $message"
+                      echo "" >> $GITHUB_STEP_SUMMARY
+                    fi
+                  fi
+                done
+          
+                echo '```' >> $GITHUB_STEP_SUMMARY
+                echo "" >> $GITHUB_STEP_SUMMARY
+              fi
+            fi
+          done
+          
+          # Add total summary
+          echo "## 📈 Overall Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "$has_failures" = true ]; then
+            echo "### ❌ **Tests Failed**" >> $GITHUB_STEP_SUMMARY
+            echo "::error::Tests failed! $total_failures failures and $total_errors errors found."
+          else
+            echo "### ✅ **All Tests Passed**" >> $GITHUB_STEP_SUMMARY
+            echo "::notice::All tests passed successfully!"
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- 🎯 **Total Tests:** $total_tests" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ **Passed:** $total_passed" >> $GITHUB_STEP_SUMMARY
+          echo "- ❌ **Failed:** $total_failures" >> $GITHUB_STEP_SUMMARY
+          echo "- 🚨 **Errors:** $total_errors" >> $GITHUB_STEP_SUMMARY
+          echo "- ⏭️ **Skipped:** $total_skipped" >> $GITHUB_STEP_SUMMARY
+          
+          # Store results for next step
+          echo "HAS_FAILURES=$has_failures" >> $GITHUB_ENV
+          echo "TOTAL_FAILURES=$total_failures" >> $GITHUB_ENV
+          echo "TOTAL_ERRORS=$total_errors" >> $GITHUB_ENV
+
+      - name: Check for test failures and fail if needed
+        if: always()
+        run: |
+          echo "Checking test results..."
+          echo "HAS_FAILURES: $HAS_FAILURES"
+          echo "TOTAL_FAILURES: $TOTAL_FAILURES" 
+          echo "TOTAL_ERRORS: $TOTAL_ERRORS"
+          
+          if [ "$HAS_FAILURES" = "true" ]; then
+            echo "❌ Tests failed! $TOTAL_FAILURES failures and $TOTAL_ERRORS errors found."
+            echo "::error::Test execution failed. Check the summary above for details."
+            exit 1
+          else
+            echo "✅ All tests passed successfully!"
+            echo "::notice::All tests completed successfully."
+          fi
+
+      - name: Upload test reports (on failure)
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: all-test-reports
+          name: test-reports-${{ github.run_number }}
           path: |
             domain/build/reports/tests/test
             application/build/reports/tests/test
-            adapter/build/reports/tests/test
-            plugin/**/build/reports/tests/test
+            adapters/build/reports/tests/test
+            plugins/**/build/reports/tests/test
+          retention-days: 7
+
+      - name: Upload test results XML (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-xml-${{ github.run_number }}
+          path: |
+            **/build/test-results/test/*.xml
+          retention-days: 7
