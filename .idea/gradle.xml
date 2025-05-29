@@ -12,6 +12,7 @@
             <option value="$PROJECT_DIR$/adapters" />
             <option value="$PROJECT_DIR$/application" />
             <option value="$PROJECT_DIR$/domain" />
+            <option value="$PROJECT_DIR$/main" />
             <option value="$PROJECT_DIR$/plugins" />
             <option value="$PROJECT_DIR$/plugins/bluesky_plugin" />
             <option value="$PROJECT_DIR$/plugins/browser_plugin" />

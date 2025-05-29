@@ -1,4 +1,4 @@
-package de.busesteinkamp
+package de.busesteinkamp.main
 
 import de.busesteinkamp.adapters.content.TextContent
 import de.busesteinkamp.adapters.generate.TextPostGenerator
