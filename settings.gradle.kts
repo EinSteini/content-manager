@@ -12,7 +12,6 @@ include(":application")
 include(":adapters")
 include(":plugins")
 include("plugins:jpa_plugin")
-include("plugins:main_plugin")
 include("plugins:inmemory_plugin")
 findProject(":plugins:inmemory_plugin")?.name = "inmemory_plugin"
 include("plugins:threads_plugin")
@@ -39,4 +38,4 @@ include("plugins:filereader_plugin")
 findProject(":plugins:filereader_plugin")?.name = "filereader_plugin"
 include("plugins:textfile_logging_plugin")
 findProject(":plugins:textfile_logging_plugin")?.name = "textfile_logging_plugin"
-include("main")
+include(":main")

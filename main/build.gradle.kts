@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm")
+    kotlin("jvm") version "2.0.0"
     id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
@@ -38,14 +38,10 @@ tasks.test {
 tasks.shadowJar {
     manifest {
         attributes(
-            "Main-Class" to "de.busesteinkamp.MainKt"
+            "Main-Class" to "de.busesteinkamp.main.MainKt"
         )
     }
     archiveClassifier.set("")
     mergeServiceFiles()
     from(sourceSets.main.get().output)
-}
-
-kotlin {
-    jvmToolchain(22)
 }

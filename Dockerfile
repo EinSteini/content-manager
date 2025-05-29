@@ -10,8 +10,10 @@ COPY application/build.gradle.kts application/
 COPY adapters/src/ adapters/src/
 COPY adapters/build.gradle.kts adapters/
 COPY plugins/ plugins/
+COPY main/src/ main/src/
+COPY main/build.gradle.kts main/
 
-RUN gradle clean :main:main_plugin:shadowJar \
+RUN gradle clean :main:shadowJar \
     --no-daemon \
     --warning-mode all \
     -Porg.gradle.java.installations.auto-download=true \
@@ -20,7 +22,7 @@ RUN gradle clean :main:main_plugin:shadowJar \
 # Run container
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
-COPY --from=build /app/plugins/main_plugin/build/libs/*.jar app.jar
+COPY --from=build /app/main/build/libs/*.jar app.jar
 
 RUN addgroup -S app && adduser -S app -G app && \
     chown -R app:app /app
