@@ -38,7 +38,7 @@ class DistributionTest {
             distribution.reportStatus(invalidPlatform, UploadStatus.FINISHED)
         }
 
-        assertNotEquals("Platform Facebook is not part of this distribution", exception.message)
+        assertEquals("Platform Facebook is not part of this distribution", exception.message)
     }
 
     @Test
