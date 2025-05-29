@@ -1,0 +1,155 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > TextPostGenerator</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">de.busesteinkamp.adapters.generate</a>
+</div>
+
+<h1>Coverage Summary for Class: TextPostGenerator (de.busesteinkamp.adapters.generate)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">TextPostGenerator</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/9)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">TextPostGenerator$generateText$1</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/9)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package de.busesteinkamp.adapters.generate
+&nbsp;
+&nbsp;import de.busesteinkamp.adapters.content.TextContent
+&nbsp;import de.busesteinkamp.domain.generator.GenAIService
+&nbsp;import de.busesteinkamp.domain.generator.Generator
+&nbsp;
+<b class="nc">&nbsp;class TextPostGenerator(private val genAIService: GenAIService) : Generator {</b>
+&nbsp;
+<b class="nc">&nbsp;    private var text = &quot;&quot;</b>
+&nbsp;
+&nbsp;    override suspend fun generateText(input: String, parameters: Map&lt;String, String&gt;) {
+<b class="nc">&nbsp;        val systemPrompt = &quot;&quot;&quot;</b>
+&nbsp;            Du bist ein KI-Modell, das darauf spezialisiert ist, humorvolle und kurze Texte für soziale Medien wie Threads, X (Twitter) oder Bluesky zu generieren.
+&nbsp;
+&nbsp;            Der Nutzer gibt dir ein Thema vor (z.B. &quot;Programmierung&quot;).
+&nbsp;            
+&nbsp;            Deine Aufgabe ist es, genau einen kurzen, lustigen Text für einen Social-Media-Post zu generieren. Der soll ein wenig ketzerisch sein und eine gewisse Nische etwas triggern.
+&nbsp;            
+&nbsp;            Der Text muss:
+&nbsp;            * zwischen 100-150 Zeichen beinhalten
+&nbsp;            * humorvoll und unterhaltsam sein
+&nbsp;            * prägnant sein (ideal für schnelle Social-Media-Konsum)
+&nbsp;            * keine direkten Beleidigungen beinhalten
+&nbsp;            * relevante Hashtags am Ende des Textes enthalten, die zum Thema passen.
+&nbsp;            * Keine Anführungszeichen, eckigen Klammern, Zeilenumbrüche oder zusätzlichen Formatierungen enthalten. Nur den reinen Text selbst liefern.
+&nbsp;            * Es gibt keine zusätzlichen Erklärungen oder einleitende Sätze, nur den Text inklusive Hashtags.
+&nbsp;            
+&nbsp;            Generiere immer nur genau einen Text. Antworte ausschließlich mit dem generierten Text inklusive Hashtags.
+<b class="nc">&nbsp;            &quot;&quot;&quot;.trimIndent()</b>
+&nbsp;
+<b class="nc">&nbsp;        val userInput = &quot;&quot;&quot;</b>
+<b class="nc">&nbsp;            Generiere mir einen Threads Post zum Thema $input.</b>
+<b class="nc">&nbsp;        &quot;&quot;&quot;.trimIndent()</b>
+&nbsp;
+<b class="nc">&nbsp;        text = genAIService.sendMessage(systemPrompt, userInput)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun getContent(): TextContent {
+<b class="nc">&nbsp;        return TextContent(content = text)</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-05-29 13:25</div>
+</div>
+</body>
+</html>

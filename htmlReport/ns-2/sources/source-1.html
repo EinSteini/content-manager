@@ -1,0 +1,218 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > GenAI_MainKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">de.busesteinkamp</a>
+</div>
+
+<h1>Coverage Summary for Class: GenAI_MainKt (de.busesteinkamp)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">GenAI_MainKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">GenAI_MainKt$main$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/26)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/27)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package de.busesteinkamp
+&nbsp;
+&nbsp;import de.busesteinkamp.adapters.content.TextContent
+&nbsp;import de.busesteinkamp.adapters.generate.TextPostGenerator
+&nbsp;import de.busesteinkamp.application.generate.GenerateTextContentUseCase
+&nbsp;import de.busesteinkamp.application.process.ExecuteDistributionUseCase
+&nbsp;import de.busesteinkamp.application.process.OpenUrlUseCase
+&nbsp;import de.busesteinkamp.domain.auth.AuthKeyRepository
+&nbsp;import de.busesteinkamp.domain.events.DomainEventPublisher
+&nbsp;import de.busesteinkamp.domain.generator.GenAIService
+&nbsp;import de.busesteinkamp.domain.generator.Generator
+&nbsp;import de.busesteinkamp.domain.platform.PublishParameters
+&nbsp;import de.busesteinkamp.domain.platform.SocialMediaPlatform
+&nbsp;import de.busesteinkamp.domain.platform.SocialMediaPlatformRepository
+&nbsp;import de.busesteinkamp.domain.process.Distribution
+&nbsp;import de.busesteinkamp.domain.process.DistributionRepository
+&nbsp;import de.busesteinkamp.domain.server.Server
+&nbsp;import de.busesteinkamp.domain.user.User
+&nbsp;import de.busesteinkamp.plugins.auth.DotenvPlugin
+&nbsp;import de.busesteinkamp.plugins.auth.SqliteAuthKeyRepository
+&nbsp;import de.busesteinkamp.plugins.client.GeminiClient
+&nbsp;import de.busesteinkamp.plugins.logging.TextFileEventLogger
+&nbsp;import de.busesteinkamp.plugins.media.InMemorySocialMediaPlatformRepository
+&nbsp;import de.busesteinkamp.plugins.platform.ThreadsPlatform
+&nbsp;import de.busesteinkamp.plugins.process.InMemoryDistributionRepository
+&nbsp;import de.busesteinkamp.plugins.server.KtorServer
+&nbsp;import de.busesteinkamp.plugins.utility.DesktopBrowserOpener
+&nbsp;import kotlinx.coroutines.runBlocking
+&nbsp;import java.util.*
+<b class="nc">&nbsp;</b>
+<b class="nc">&nbsp;</b>
+<b class="nc">&nbsp;fun main(): Unit = runBlocking {</b>
+&nbsp;    val fileLogger = TextFileEventLogger()
+<b class="nc">&nbsp;    val eventPublisher: DomainEventPublisher = fileLogger</b>
+&nbsp;    val platformRepository: SocialMediaPlatformRepository = InMemorySocialMediaPlatformRepository()
+<b class="nc">&nbsp;    val distributionRepository: DistributionRepository = InMemoryDistributionRepository()</b>
+<b class="nc">&nbsp;</b>
+&nbsp;    val executeDistributionUseCase = ExecuteDistributionUseCase(distributionRepository, eventPublisher)
+<b class="nc">&nbsp;</b>
+<b class="nc">&nbsp;    val server: Server = KtorServer(8443)</b>
+<b class="nc">&nbsp;    val authKeyRepository: AuthKeyRepository = SqliteAuthKeyRepository()</b>
+&nbsp;
+<b class="nc">&nbsp;    val genAIService: GenAIService = GeminiClient()</b>
+<b class="nc">&nbsp;    val textPostGenerator: Generator = TextPostGenerator(genAIService = genAIService)</b>
+&nbsp;    val generateTextContentUseCase = GenerateTextContentUseCase(textPostGenerator)
+<b class="nc">&nbsp;</b>
+<b class="nc">&nbsp;    val openUrlUseCase = OpenUrlUseCase(false, DesktopBrowserOpener())</b>
+&nbsp;    val dotenv = DotenvPlugin()
+&nbsp;
+<b class="nc">&nbsp;    val textContent = generateTextContentUseCase.execute(</b>
+<b class="nc">&nbsp;        input = &quot;Programmierung&quot;</b>
+&nbsp;    )
+<b class="nc">&nbsp;</b>
+<b class="nc">&nbsp;    val content: TextContent = TextContent(content = textContent.get().toString())</b>
+<b class="nc">&nbsp;    println(content.get())</b>
+<b class="nc">&nbsp;</b>
+<b class="nc">&nbsp;    val threads: SocialMediaPlatform =</b>
+&nbsp;        ThreadsPlatform(UUID.randomUUID(), &quot;Threads&quot;, server, authKeyRepository, openUrlUseCase, dotenv)
+<b class="nc">&nbsp;    val mainUser = User.create(&quot;main&quot;, listOf(threads))</b>
+<b class="nc">&nbsp;</b>
+<b class="nc">&nbsp;    // Publish user creation events</b>
+<b class="nc">&nbsp;    if (mainUser.hasUncommittedEvents()) {</b>
+&nbsp;        mainUser.getUncommittedEvents().forEach { event -&gt;
+&nbsp;            eventPublisher.publish(event)
+<b class="nc">&nbsp;        }</b>
+<b class="nc">&nbsp;        mainUser.markEventsAsCommitted()</b>
+&nbsp;    }
+<b class="nc">&nbsp;    platformRepository.save(threads)</b>
+&nbsp;    val publishParameters = PublishParameters.createDefault().copy(
+&nbsp;        title = &quot;New Post&quot;
+&nbsp;    )
+&nbsp;
+&nbsp;    val distribution = Distribution.create(
+&nbsp;        content = content,
+&nbsp;        publishParameters = publishParameters,
+&nbsp;        platforms = mainUser.platforms
+&nbsp;    )
+&nbsp;
+&nbsp;    // Add shutdown hook to properly close the file logger session
+&nbsp;    Runtime.getRuntime().addShutdownHook(Thread {
+&nbsp;        fileLogger.closeSession()
+&nbsp;    })
+&nbsp;
+&nbsp;    server.start()
+&nbsp;    executeDistributionUseCase.execute(distribution)
+&nbsp;
+&nbsp;    Scanner(System.`in`).nextLine()
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-05-29 13:25</div>
+</div>
+</body>
+</html>

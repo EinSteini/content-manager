@@ -1,0 +1,578 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > TerminalColors</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">de.busesteinkamp</a>
+</div>
+
+<h1>Coverage Summary for Class: TerminalColors (de.busesteinkamp)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+</tr>
+<tr>
+  <td class="name">TerminalColors</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package de.busesteinkamp
+&nbsp;
+&nbsp;import de.busesteinkamp.adapters.content.TextContent
+&nbsp;import de.busesteinkamp.adapters.generate.TextPostGenerator
+&nbsp;import de.busesteinkamp.application.generate.GenerateTextContentUseCase
+&nbsp;import de.busesteinkamp.application.process.ExecuteDistributionUseCase
+&nbsp;import de.busesteinkamp.application.process.OpenUrlUseCase
+&nbsp;import de.busesteinkamp.domain.auth.AuthKeyRepository
+&nbsp;import de.busesteinkamp.domain.events.DomainEventPublisher
+&nbsp;import de.busesteinkamp.domain.generator.GenAIService
+&nbsp;import de.busesteinkamp.domain.generator.Generator
+&nbsp;import de.busesteinkamp.domain.platform.PublishParameters
+&nbsp;import de.busesteinkamp.domain.platform.SocialMediaPlatform
+&nbsp;import de.busesteinkamp.domain.platform.SocialMediaPlatformRepository
+&nbsp;import de.busesteinkamp.domain.process.Distribution
+&nbsp;import de.busesteinkamp.domain.process.DistributionRepository
+&nbsp;import de.busesteinkamp.domain.server.Server
+&nbsp;import de.busesteinkamp.domain.user.User
+&nbsp;import de.busesteinkamp.domain.user.UserRepository
+&nbsp;import de.busesteinkamp.plugins.auth.DotenvPlugin
+&nbsp;import de.busesteinkamp.plugins.auth.SqliteAuthKeyRepository
+&nbsp;import de.busesteinkamp.plugins.client.GeminiClient
+&nbsp;import de.busesteinkamp.plugins.content.ContentFileReader
+&nbsp;import de.busesteinkamp.plugins.logging.TextFileEventLogger
+&nbsp;import de.busesteinkamp.plugins.media.InMemorySocialMediaPlatformRepository
+&nbsp;import de.busesteinkamp.plugins.platform.BlueskyPlatform
+&nbsp;import de.busesteinkamp.plugins.platform.ThreadsPlatform
+&nbsp;import de.busesteinkamp.plugins.platform.TwitterPlatform
+&nbsp;import de.busesteinkamp.plugins.process.InMemoryDistributionRepository
+&nbsp;import de.busesteinkamp.plugins.server.KtorServer
+&nbsp;import de.busesteinkamp.plugins.user.InMemoryUserRepository
+&nbsp;import de.busesteinkamp.plugins.utility.DesktopBrowserOpener
+&nbsp;import kotlinx.coroutines.*
+&nbsp;import java.io.File
+&nbsp;import java.util.*
+&nbsp;
+&nbsp;/**
+&nbsp; * ANSI escape codes for terminal colors and styles.
+&nbsp; */
+&nbsp;object TerminalColors {
+&nbsp;    const val RESET = &quot;\u001B[0m&quot;
+&nbsp;    const val GREEN = &quot;\u001B[32m&quot;
+&nbsp;    const val YELLOW = &quot;\u001B[33m&quot;
+&nbsp;    const val BLUE = &quot;\u001B[34m&quot;
+&nbsp;    const val RED = &quot;\u001B[31m&quot;
+&nbsp;    const val BOLD = &quot;\u001B[1m&quot;
+&nbsp;    const val CYAN = &quot;\u001B[36m&quot;
+&nbsp;    const val PURPLE = &quot;\u001B[35m&quot;
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Main class for the Terminal Content Manager Application.
+&nbsp; * This class handles user interaction and manages the posting of content to various platforms.
+&nbsp; */
+&nbsp;class TerminalMain {
+&nbsp;    private val fileLogger = TextFileEventLogger()
+&nbsp;    private val eventPublisher: DomainEventPublisher = fileLogger
+&nbsp;    private val platformRepository: SocialMediaPlatformRepository = InMemorySocialMediaPlatformRepository()
+&nbsp;    private val userRepository: UserRepository = InMemoryUserRepository()
+&nbsp;    private val distributionRepository: DistributionRepository = InMemoryDistributionRepository()
+&nbsp;    private val executeDistributionUseCase = ExecuteDistributionUseCase(distributionRepository, eventPublisher)
+&nbsp;    private val server: Server = KtorServer(8443)
+&nbsp;    private val authKeyRepository: AuthKeyRepository = SqliteAuthKeyRepository()
+&nbsp;    private val openUrlUseCase = OpenUrlUseCase(false, DesktopBrowserOpener())
+&nbsp;    private val genAIService: GenAIService = GeminiClient()
+&nbsp;    private val textPostGenerator: Generator = TextPostGenerator(genAIService = genAIService)
+&nbsp;    private val generateTextContentUseCase = GenerateTextContentUseCase(textPostGenerator)
+&nbsp;    private val envRetriever = DotenvPlugin()
+&nbsp;
+&nbsp;    // List of available platform factories for creating platform instances
+&nbsp;    private val availablePlatformFactories = listOf(
+&nbsp;        &quot;Twitter&quot; to { id: UUID -&gt;
+&nbsp;            TwitterPlatform(
+&nbsp;                id,
+&nbsp;                &quot;Twitter&quot;,
+&nbsp;                server,
+&nbsp;                authKeyRepository,
+&nbsp;                openUrlUseCase,
+&nbsp;                envRetriever
+&nbsp;            )
+&nbsp;        },
+&nbsp;        &quot;Bluesky&quot; to { id: UUID -&gt; BlueskyPlatform(id, &quot;Bluesky&quot;, envRetriever) },
+&nbsp;        &quot;Threads&quot; to { id: UUID -&gt;
+&nbsp;            ThreadsPlatform(
+&nbsp;                id,
+&nbsp;                &quot;Threads&quot;,
+&nbsp;                server,
+&nbsp;                authKeyRepository,
+&nbsp;                openUrlUseCase,
+&nbsp;                envRetriever
+&nbsp;            )
+&nbsp;        }
+&nbsp;    )
+&nbsp;
+&nbsp;    // Currently selected user preset
+&nbsp;    private var currentUser: User? = null
+&nbsp;    private val rickRollUrl = &quot;https://shattereddisk.github.io/rickroll/rickroll.mp4&quot;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Displays a fancy welcome message with ASCII art.
+&nbsp;     */
+&nbsp;    private fun displayWelcome() {
+&nbsp;        println(
+&nbsp;            &quot;&quot;&quot;
+&nbsp;            ${TerminalColors.CYAN}
+&nbsp;               ______            __             __      
+&nbsp;              / ____/___  ____  / /____  ____  / /_     
+&nbsp;             / /   / __ \/ __ \/ __/ _ \/ __ \/ __/     
+&nbsp;            / /___/ /_/ / / / / /_/  __/ / / / /_       
+&nbsp;            \_____\____/_/ /_/\__/\___/_/ /_/\__/       
+&nbsp;               /  |/  /___ _____  ____ _____ ____  _____
+&nbsp;              / /|_/ / __ `/ __ \/ __ `/ __ `/ _ \/ ___/
+&nbsp;             / /  / / /_/ / / / / /_/ / /_/ /  __/ /    
+&nbsp;            /_/  /_/\__,_/_/ /_/\__,_/\__, /\___/_/     
+&nbsp;                                     /____/           
+&nbsp;            ${TerminalColors.RESET}     
+&nbsp;            ${TerminalColors.PURPLE}Welcome to your Social Media Content Manager!${TerminalColors.RESET}
+&nbsp;            ==================================================
+&nbsp;        &quot;&quot;&quot;.trimIndent()
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Validates if a file path exists and is accessible.
+&nbsp;     */
+&nbsp;    private fun validatePath(path: String): Boolean {
+&nbsp;        return try {
+&nbsp;            val file = File(path)
+&nbsp;            file.exists() &amp;&amp; file.canRead()
+&nbsp;        } catch (e: SecurityException) {
+&nbsp;            false
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Shows a progress indicator while executing a task.
+&nbsp;     */
+&nbsp;    private suspend fun showProgress(message: String, task: suspend () -&gt; Unit) {
+&nbsp;        val progressChars = listOf(&quot;⣾&quot;, &quot;⣽&quot;, &quot;⣻&quot;, &quot;⢿&quot;, &quot;⡿&quot;, &quot;⣟&quot;, &quot;⣯&quot;, &quot;⣷&quot;)
+&nbsp;        var index = 0
+&nbsp;        var isRunning = true
+&nbsp;
+&nbsp;        // Start progress animation in a coroutine
+&nbsp;        val progressJob = CoroutineScope(Dispatchers.IO).launch {
+&nbsp;            while (isRunning) {
+&nbsp;                print(&quot;\r$message ${progressChars[index]} &quot;)
+&nbsp;                index = (index + 1) % progressChars.size
+&nbsp;                delay(100)
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        try {
+&nbsp;            task()
+&nbsp;        } finally {
+&nbsp;            isRunning = false
+&nbsp;            progressJob.cancel()
+&nbsp;            println(&quot;\r$message ✓&quot;) // Show completion
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Starts the terminal application and handles user interaction.
+&nbsp;     */
+&nbsp;    fun start() = runBlocking {
+&nbsp;        // Add shutdown hook to properly close the file logger session
+&nbsp;        Runtime.getRuntime().addShutdownHook(Thread {
+&nbsp;            fileLogger.closeSession()
+&nbsp;        })
+&nbsp;
+&nbsp;        server.start()
+&nbsp;        displayWelcome()
+&nbsp;
+&nbsp;        while (true) {
+&nbsp;            println(&quot;\nWhat would you like to do?&quot;)
+&nbsp;            println(&quot;${TerminalColors.GREEN}1. Select/Create User Preset${TerminalColors.RESET}&quot;)
+&nbsp;            println(&quot;${TerminalColors.GREEN}2. Post Content ${currentUser?.let { &quot;(${it.name})&quot; } ?: &quot;&quot;}${TerminalColors.RESET}&quot;)
+&nbsp;            println(&quot;${TerminalColors.GREEN}3. Exit${TerminalColors.RESET}&quot;)
+&nbsp;            print(&quot;${TerminalColors.YELLOW}Please select an option (1-3): ${TerminalColors.RESET}&quot;)
+&nbsp;
+&nbsp;            val input = readlnOrNull()?.trim() ?: continue
+&nbsp;
+&nbsp;            when (input.toIntOrNull()) {
+&nbsp;                1 -&gt; handleUserPreset()
+&nbsp;                2 -&gt; handlePostContent()
+&nbsp;                3 -&gt; {
+&nbsp;                    println(&quot;${TerminalColors.GREEN}Goodbye!${TerminalColors.RESET}&quot;)
+&nbsp;                    return@runBlocking
+&nbsp;                }
+&nbsp;                // For those who try to read, even on the first step...
+&nbsp;                4 -&gt; {
+&nbsp;                    println(&quot;${TerminalColors.GREEN}You can´t read your choices...${TerminalColors.RESET}&quot;)
+&nbsp;                    println(&quot;${TerminalColors.GREEN}Now you will be rick rolled...${TerminalColors.RESET}&quot;)
+&nbsp;                    openUrlUseCase.execute(rickRollUrl)
+&nbsp;                }
+&nbsp;
+&nbsp;                else -&gt; println(&quot;${TerminalColors.RED}Invalid option. Please try again.${TerminalColors.RESET}&quot;)
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Manages user preset selection and creation.
+&nbsp;     */
+&nbsp;    private suspend fun handleUserPreset() {
+&nbsp;        println(&quot;\nCurrent User: ${currentUser?.name ?: &quot;No preset selected&quot;}&quot;)
+&nbsp;        println(&quot;==================================================&quot;)
+&nbsp;        println(&quot;\nUser Preset Management&quot;)
+&nbsp;        println(&quot;${TerminalColors.GREEN}1. Select existing preset${TerminalColors.RESET}&quot;)
+&nbsp;        println(&quot;${TerminalColors.GREEN}2. Create new preset${TerminalColors.RESET}&quot;)
+&nbsp;        println(&quot;${TerminalColors.GREEN}3. Back to main menu${TerminalColors.RESET}&quot;)
+&nbsp;        print(&quot;${TerminalColors.YELLOW}Please select an option (1-3): ${TerminalColors.RESET}&quot;)
+&nbsp;
+&nbsp;        when (readlnOrNull()?.toIntOrNull()) {
+&nbsp;            1 -&gt; selectExistingPreset()
+&nbsp;            2 -&gt; createNewPreset()
+&nbsp;            3 -&gt; return
+&nbsp;            else -&gt; println(&quot;${TerminalColors.RED}Invalid option. Please try again.${TerminalColors.RESET}&quot;)
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Allows the user to select an existing preset.
+&nbsp;     */
+&nbsp;    private suspend fun selectExistingPreset() {
+&nbsp;        val users = userRepository.findAll()
+&nbsp;        if (users.isEmpty()) {
+&nbsp;            println(&quot;${TerminalColors.RED}No presets found. Please create a new preset first.${TerminalColors.RESET}&quot;)
+&nbsp;            return
+&nbsp;        }
+&nbsp;
+&nbsp;        println(&quot;\nAvailable presets:&quot;)
+&nbsp;        users.forEachIndexed { index: Int, user: User -&gt;
+&nbsp;            println(&quot;${index + 1}. ${user.name}&quot;)
+&nbsp;        }
+&nbsp;
+&nbsp;        print(&quot;${TerminalColors.YELLOW}Select a preset (1-${users.size}): ${TerminalColors.RESET}&quot;)
+&nbsp;        val selection = readlnOrNull()?.toIntOrNull()
+&nbsp;
+&nbsp;        if (selection != null &amp;&amp; selection in 1..users.size) {
+&nbsp;            currentUser = users[selection - 1]
+&nbsp;            println(&quot;${TerminalColors.GREEN}Selected preset: ${currentUser?.name}${TerminalColors.RESET}&quot;)
+&nbsp;        } else {
+&nbsp;            println(&quot;${TerminalColors.RED}Invalid selection.${TerminalColors.RESET}&quot;)
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Creates a new user preset with selected platforms.
+&nbsp;     */
+&nbsp;    private suspend fun createNewPreset() {
+&nbsp;        print(&quot;\nEnter preset name: &quot;)
+&nbsp;        val name = readlnOrNull() ?: return
+&nbsp;
+&nbsp;        val platforms = selectPlatforms()
+&nbsp;        if (platforms.isEmpty()) {
+&nbsp;            println(&quot;${TerminalColors.RED}No platforms selected. Preset creation cancelled.${TerminalColors.RESET}&quot;)
+&nbsp;            return
+&nbsp;        }
+&nbsp;
+&nbsp;        val user = User.create(name = name, platforms = platforms)
+&nbsp;
+&nbsp;        // Publish user creation events
+&nbsp;        if (user.hasUncommittedEvents()) {
+&nbsp;            user.getUncommittedEvents().forEach { event -&gt;
+&nbsp;                eventPublisher.publish(event)
+&nbsp;            }
+&nbsp;            user.markEventsAsCommitted()
+&nbsp;        }
+&nbsp;
+&nbsp;        currentUser = userRepository.save(user)
+&nbsp;        println(&quot;${TerminalColors.GREEN}Created new preset: ${user.name}${TerminalColors.RESET}&quot;)
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Handles the content posting process.
+&nbsp;     */
+&nbsp;    private suspend fun handlePostContent() {
+&nbsp;        println(&quot;\nWhat would you like to post? ${currentUser?.let { &quot;(${it.name})&quot; } ?: &quot;&quot;}&quot;)
+&nbsp;        println(&quot;${TerminalColors.GREEN}1. GenAI Generated Text${TerminalColors.RESET}&quot;)
+&nbsp;        println(&quot;${TerminalColors.GREEN}2. Plain Text${TerminalColors.RESET}&quot;)
+&nbsp;        println(&quot;${TerminalColors.GREEN}3. Text File${TerminalColors.RESET}&quot;)
+&nbsp;        println(&quot;${TerminalColors.GREEN}4. Image with Text${TerminalColors.RESET}&quot;)
+&nbsp;        println(&quot;${TerminalColors.GREEN}5. Multiple Images with Text${TerminalColors.RESET}&quot;)
+&nbsp;        println(&quot;${TerminalColors.GREEN}6. Back to main menu${TerminalColors.RESET}&quot;)
+&nbsp;        print(&quot;${TerminalColors.YELLOW}Please select an option (1-7): ${TerminalColors.RESET}&quot;)
+&nbsp;
+&nbsp;        when (readlnOrNull()?.toIntOrNull()) {
+&nbsp;            1 -&gt; handleGenAIText()
+&nbsp;            2 -&gt; handlePlainText()
+&nbsp;            3 -&gt; handleTextFile()
+&nbsp;            4 -&gt; handleImageWithText()
+&nbsp;            5 -&gt; handleMultipleImagesWithText()
+&nbsp;            6 -&gt; return
+&nbsp;            else -&gt; println(&quot;${TerminalColors.RED}Invalid option. Please try again.${TerminalColors.RESET}&quot;)
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Prompts the user to select platforms for posting.
+&nbsp;     * @return List of selected platforms.
+&nbsp;     */
+&nbsp;    private fun selectPlatforms(): List&lt;SocialMediaPlatform&gt; {
+&nbsp;        println(&quot;\nSelect platforms to post to (comma-separated numbers):&quot;)
+&nbsp;        availablePlatformFactories.forEachIndexed { index, (name, _) -&gt;
+&nbsp;            println(&quot;${index + 1}. $name&quot;)
+&nbsp;        }
+&nbsp;
+&nbsp;        val selections =
+&nbsp;            readlnOrNull()?.split(&quot;,&quot;)?.map { it.trim().toIntOrNull() }?.filterNotNull() ?: return emptyList()
+&nbsp;        return selections.mapNotNull { index -&gt;
+&nbsp;            availablePlatformFactories.getOrNull(index - 1)?.let { (_, factory) -&gt;
+&nbsp;                factory(UUID.randomUUID())
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Handles the generation of text posts using GenAI.
+&nbsp;     */
+&nbsp;    private suspend fun handleGenAIText() {
+&nbsp;        println(&quot;\nEnter your topic for GenAI post generation:&quot;)
+&nbsp;        val prompt = readlnOrNull() ?: return
+&nbsp;
+&nbsp;        val platforms = if (currentUser != null) {
+&nbsp;            currentUser!!.platforms
+&nbsp;        } else {
+&nbsp;            selectPlatforms()
+&nbsp;        }
+&nbsp;        if (platforms.isEmpty()) return
+&nbsp;
+&nbsp;        val textContent = generateTextContentUseCase.execute(
+&nbsp;            input = prompt
+&nbsp;        )
+&nbsp;
+&nbsp;        val publishParams = PublishParameters.createDefault().copy(
+&nbsp;            title = textContent.get().toString()
+&nbsp;        )
+&nbsp;
+&nbsp;        val distribution = Distribution.create(
+&nbsp;            content = TextContent(UUID.randomUUID(), textContent.get().toString()),
+&nbsp;            publishParameters = publishParams,
+&nbsp;            platforms = platforms
+&nbsp;        )
+&nbsp;
+&nbsp;        executeAndShowResults(distribution)
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Handles posting of plain text content.
+&nbsp;     */
+&nbsp;    private suspend fun handlePlainText() {
+&nbsp;        println(&quot;\nEnter your text:&quot;)
+&nbsp;        val text = readlnOrNull() ?: return
+&nbsp;
+&nbsp;        val platforms = if (currentUser != null) {
+&nbsp;            currentUser!!.platforms
+&nbsp;        } else {
+&nbsp;            selectPlatforms()
+&nbsp;        }
+&nbsp;        if (platforms.isEmpty()) return
+&nbsp;
+&nbsp;        val publishParams = PublishParameters.createDefault().copy(
+&nbsp;            title = text
+&nbsp;        )
+&nbsp;
+&nbsp;        val distribution = Distribution.create(
+&nbsp;            content = TextContent(UUID.randomUUID(), text),
+&nbsp;            publishParameters = publishParams,
+&nbsp;            platforms = platforms
+&nbsp;        )
+&nbsp;
+&nbsp;        executeAndShowResults(distribution)
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Handles posting of content from a text file.
+&nbsp;     */
+&nbsp;    private suspend fun handleTextFile() {
+&nbsp;        println(&quot;\nEnter the path to your text file:&quot;)
+&nbsp;        val filePath = readlnOrNull() ?: return
+&nbsp;
+&nbsp;        if (!validatePath(filePath)) {
+&nbsp;            println(&quot;${TerminalColors.RED}Error: File does not exist or is not accessible.${TerminalColors.RESET}&quot;)
+&nbsp;            return
+&nbsp;        }
+&nbsp;
+&nbsp;        val platforms = if (currentUser != null) {
+&nbsp;            currentUser!!.platforms
+&nbsp;        } else {
+&nbsp;            selectPlatforms()
+&nbsp;        }
+&nbsp;        if (platforms.isEmpty()) return
+&nbsp;
+&nbsp;        val publishParams = PublishParameters.createDefault().copy(
+&nbsp;            title = &quot;Text from file&quot;
+&nbsp;        )
+&nbsp;
+&nbsp;        val distribution = Distribution.create(
+&nbsp;            content = TextContent(UUID.randomUUID(), filePath),
+&nbsp;            publishParameters = publishParams,
+&nbsp;            platforms = platforms
+&nbsp;        )
+&nbsp;
+&nbsp;        executeAndShowResults(distribution)
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Handles posting of an image with accompanying text.
+&nbsp;     */
+&nbsp;    private suspend fun handleImageWithText() {
+&nbsp;        println(&quot;\nEnter the path to your image:&quot;)
+&nbsp;        val imagePath = readlnOrNull() ?: return
+&nbsp;
+&nbsp;        println(&quot;Enter alt text for the image:&quot;)
+&nbsp;        readlnOrNull() ?: return
+&nbsp;
+&nbsp;        println(&quot;Enter your text:&quot;)
+&nbsp;        val text = readlnOrNull() ?: return
+&nbsp;
+&nbsp;        val platforms = if (currentUser != null) {
+&nbsp;            currentUser!!.platforms
+&nbsp;        } else {
+&nbsp;            selectPlatforms()
+&nbsp;        }
+&nbsp;        if (platforms.isEmpty()) return
+&nbsp;
+&nbsp;        val publishParams = PublishParameters.createDefault().copy(
+&nbsp;            title = text
+&nbsp;        )
+&nbsp;
+&nbsp;        val imageContent = ContentFileReader(imagePath).getContent()
+&nbsp;
+&nbsp;        val distribution = Distribution.create(
+&nbsp;            content = imageContent,
+&nbsp;            publishParameters = publishParams,
+&nbsp;            platforms = platforms
+&nbsp;        )
+&nbsp;
+&nbsp;        executeAndShowResults(distribution)
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Handles posting of multiple images with accompanying text.
+&nbsp;     */
+&nbsp;    private suspend fun handleMultipleImagesWithText() {
+&nbsp;        println(&quot;\n${TerminalColors.RED}Error: This feature is currently disabled.${TerminalColors.RESET}&quot;)
+&nbsp;
+&nbsp;//        println(&quot;\nEnter the paths to your images (comma-separated):&quot;)
+&nbsp;//        val imagePaths = readlnOrNull()?.split(&quot;,&quot;)?.map { it.trim() } ?: return
+&nbsp;//
+&nbsp;//        println(&quot;Enter alt texts for the images (comma-separated):&quot;)
+&nbsp;//        val altTexts = readlnOrNull()?.split(&quot;,&quot;)?.map { it.trim() } ?: return
+&nbsp;//
+&nbsp;//        if (imagePaths.size != altTexts.size) {
+&nbsp;//            println(&quot;${TerminalColors.RED}Error: Number of images and alt texts must match!${TerminalColors.RESET}&quot;)
+&nbsp;//            return
+&nbsp;//        }
+&nbsp;//
+&nbsp;//        println(&quot;Enter your text:&quot;)
+&nbsp;//        val text = readlnOrNull() ?: return
+&nbsp;//
+&nbsp;//        val platforms = if (currentUser != null) {
+&nbsp;//            currentUser!!.platforms
+&nbsp;//        } else {
+&nbsp;//            selectPlatforms()
+&nbsp;//        }
+&nbsp;//        if (platforms.isEmpty()) return
+&nbsp;//
+&nbsp;//        val publishParams = PublishParameters.createDefault().copy(
+&nbsp;//            title = text
+&nbsp;//        )
+&nbsp;//
+&nbsp;//        val distribution = Distribution.create(
+&nbsp;//            content = MultipleImageFiles(UUID.randomUUID(), imagePaths, altTexts),
+&nbsp;//            publishParameters = publishParams,
+&nbsp;//            platforms = platforms
+&nbsp;//        )
+&nbsp;//
+&nbsp;//        executeAndShowResults(distribution)
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Executes the distribution of the content to the selected platforms and shows the results.
+&nbsp;     * @param distribution The distribution object containing media and platforms.
+&nbsp;     */
+&nbsp;    private suspend fun executeAndShowResults(distribution: Distribution) {
+&nbsp;        try {
+&nbsp;            showProgress(&quot;Distributing content to platforms...&quot;) {
+&nbsp;                executeDistributionUseCase.execute(distribution)
+&nbsp;            }
+&nbsp;
+&nbsp;            println(&quot;\n${TerminalColors.GREEN}Distribution completed successfully!${TerminalColors.RESET}&quot;)
+&nbsp;            println(&quot;Posted to platforms:&quot;)
+&nbsp;            distribution.platforms.forEach { platform -&gt;
+&nbsp;                println(&quot;${TerminalColors.BLUE}- ${platform.name}${TerminalColors.RESET}&quot;)
+&nbsp;            }
+&nbsp;        } catch (e: Exception) {
+&nbsp;            println(&quot;\n${TerminalColors.RED}Error during distribution: ${e.message}${TerminalColors.RESET}&quot;)
+&nbsp;        }
+&nbsp;        println(&quot;\nPress Enter to continue...&quot;)
+&nbsp;        readlnOrNull()
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Main function to start the TerminalMain application.
+&nbsp; */
+&nbsp;fun main(args: Array&lt;String&gt;) {
+&nbsp;    TerminalMain().start()
+&nbsp;} 
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-05-29 13:25</div>
+</div>
+</body>
+</html>

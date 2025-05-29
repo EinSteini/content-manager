@@ -1,0 +1,181 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > DistributionFailedEvent</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">de.busesteinkamp.domain.events</a>
+</div>
+
+<h1>Coverage Summary for Class: DistributionFailedEvent (de.busesteinkamp.domain.events)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">DistributionFailedEvent</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (1/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    92,3%
+  </span>
+  <span class="absValue">
+    (12/13)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">DistributionFailedEvent$Companion</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (13/13)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (3/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    96,2%
+  </span>
+  <span class="absValue">
+    (25/26)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package de.busesteinkamp.domain.events
+&nbsp;
+&nbsp;import java.time.Instant
+&nbsp;import java.util.*
+&nbsp;
+&nbsp;/**
+&nbsp; * Domain Event published when a content distribution fails on a platform.
+&nbsp; * This event tracks distribution failures with detailed error information.
+&nbsp; */
+<b class="nc">&nbsp;data class DistributionFailedEvent(</b>
+<b class="fc">&nbsp;    override val eventId: UUID = UUID.randomUUID(),</b>
+<b class="fc">&nbsp;    override val occurredAt: Instant = Instant.now(),</b>
+<b class="fc">&nbsp;    override val actorId: String,</b>
+<b class="fc">&nbsp;    override val createdBy: String = &quot;DistributionAggregate&quot;,</b>
+<b class="fc">&nbsp;    val distributionId: UUID,</b>
+<b class="fc">&nbsp;    val platformName: String,</b>
+<b class="fc">&nbsp;    val reason: String,</b>
+<b class="fc">&nbsp;    val contentId: UUID,</b>
+<b class="fc">&nbsp;    val errorCode: String? = null,</b>
+<b class="fc">&nbsp;    val retryable: Boolean = false,</b>
+<b class="fc">&nbsp;    val attemptNumber: Int = 1</b>
+&nbsp;) : DomainEvent {
+<b class="fc">&nbsp;    override val eventType: String = &quot;DistributionFailed&quot;</b>
+&nbsp;    
+&nbsp;    companion object {
+&nbsp;        /**
+&nbsp;         * Factory method to create a DistributionFailedEvent
+&nbsp;         */
+&nbsp;        fun create(
+&nbsp;            distributionId: UUID,
+&nbsp;            platformName: String,
+&nbsp;            reason: String,
+&nbsp;            contentId: UUID,
+<b class="fc">&nbsp;            errorCode: String? = null,</b>
+<b class="fc">&nbsp;            retryable: Boolean = false,</b>
+<b class="fc">&nbsp;            attemptNumber: Int = 1,</b>
+<b class="fc">&nbsp;            actorId: String = &quot;system&quot;</b>
+&nbsp;        ): DistributionFailedEvent {
+<b class="fc">&nbsp;            return DistributionFailedEvent(</b>
+<b class="fc">&nbsp;                distributionId = distributionId,</b>
+<b class="fc">&nbsp;                platformName = platformName,</b>
+<b class="fc">&nbsp;                reason = reason,</b>
+<b class="fc">&nbsp;                contentId = contentId,</b>
+<b class="fc">&nbsp;                errorCode = errorCode,</b>
+<b class="fc">&nbsp;                retryable = retryable,</b>
+<b class="fc">&nbsp;                attemptNumber = attemptNumber,</b>
+<b class="fc">&nbsp;                actorId = actorId</b>
+&nbsp;            )
+&nbsp;        }
+&nbsp;    }
+&nbsp;} 
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-05-29 13:25</div>
+</div>
+</body>
+</html>

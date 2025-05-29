@@ -1,0 +1,202 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > Main</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">de.busesteinkamp</a>
+</div>
+
+<h1>Coverage Summary for Class: Main (de.busesteinkamp)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">Main</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package de.busesteinkamp
+&nbsp;
+&nbsp;import SystemEnvPlugin
+&nbsp;import de.busesteinkamp.application.process.ExecuteDistributionUseCase
+&nbsp;import de.busesteinkamp.application.process.OpenUrlUseCase
+&nbsp;import de.busesteinkamp.domain.auth.AuthKeyRepository
+&nbsp;import de.busesteinkamp.domain.content.Content
+&nbsp;import de.busesteinkamp.domain.events.DomainEventPublisher
+&nbsp;import de.busesteinkamp.domain.platform.PublishParameters
+&nbsp;import de.busesteinkamp.domain.platform.SocialMediaPlatform
+&nbsp;import de.busesteinkamp.domain.platform.SocialMediaPlatformRepository
+&nbsp;import de.busesteinkamp.domain.process.Distribution
+&nbsp;import de.busesteinkamp.domain.process.DistributionRepository
+&nbsp;import de.busesteinkamp.domain.server.Server
+&nbsp;import de.busesteinkamp.domain.user.User
+&nbsp;import de.busesteinkamp.domain.user.UserRepository
+&nbsp;import de.busesteinkamp.plugins.auth.SqliteAuthKeyRepository
+&nbsp;import de.busesteinkamp.plugins.content.ContentFileReader
+&nbsp;import de.busesteinkamp.plugins.logging.TextFileEventLogger
+&nbsp;import de.busesteinkamp.plugins.media.InMemorySocialMediaPlatformRepository
+&nbsp;import de.busesteinkamp.plugins.platform.BlueskyPlatform
+&nbsp;import de.busesteinkamp.plugins.process.InMemoryDistributionRepository
+&nbsp;import de.busesteinkamp.plugins.server.KtorServer
+&nbsp;import de.busesteinkamp.plugins.user.InMemoryUserRepository
+&nbsp;import de.busesteinkamp.plugins.utility.DesktopBrowserOpener
+&nbsp;import kotlinx.coroutines.runBlocking
+&nbsp;import java.util.*
+&nbsp;
+<b class="nc">&nbsp;open class Main</b>
+&nbsp;
+&nbsp;fun main(args: Array&lt;String&gt;): Unit = runBlocking {
+&nbsp;    // Hier die Abhängigkeiten manuell erstellen und injizieren
+&nbsp;    val fileLogger = TextFileEventLogger()
+&nbsp;    val eventPublisher: DomainEventPublisher = fileLogger
+&nbsp;    val platformRepository: SocialMediaPlatformRepository = InMemorySocialMediaPlatformRepository()
+&nbsp;    val userRepository: UserRepository = InMemoryUserRepository()
+&nbsp;    val distributionRepository: DistributionRepository = InMemoryDistributionRepository()
+&nbsp;    val executeDistributionUseCase = ExecuteDistributionUseCase(distributionRepository, eventPublisher)
+&nbsp;    val server: Server = KtorServer(8443)
+&nbsp;    val authKeyRepository: AuthKeyRepository = SqliteAuthKeyRepository()
+&nbsp;    val openUrlUseCase = OpenUrlUseCase(true, DesktopBrowserOpener())
+&nbsp;    val envRetriever = SystemEnvPlugin()
+&nbsp;
+&nbsp;    val examplePostPath = javaClass.getResource(&quot;/example_post.txt&quot;)?.path
+&nbsp;    if (examplePostPath == null) {
+&nbsp;        println(&quot;Could not find example_post.txt&quot;)
+&nbsp;        return@runBlocking
+&nbsp;    }
+&nbsp;
+&nbsp;    val exampleImagePath = javaClass.getResource(&quot;/helloworld.jpg&quot;)?.path
+&nbsp;    if (exampleImagePath == null) {
+&nbsp;        println(&quot;Could not find helloworld.jpg&quot;)
+&nbsp;        return@runBlocking
+&nbsp;    }
+&nbsp;
+&nbsp;    val textContent: Content = ContentFileReader(examplePostPath).getContent()
+&nbsp;    val imageContent: Content = ContentFileReader(exampleImagePath).getContent()
+&nbsp;
+&nbsp;//    val threads: SocialMediaPlatform =
+&nbsp;//        ThreadsPlatform(UUID.randomUUID(), &quot;Threads&quot;, server, authKeyRepository, openUrlUseCase, envRetriever)
+&nbsp;    val bsky: SocialMediaPlatform = BlueskyPlatform(UUID.randomUUID(), &quot;Bluesky&quot;, envRetriever)
+&nbsp;//    val twitter: Platform = TwitterPlatform(UUID.randomUUID(), &quot;Twitter&quot;, server, authKeyRepository, openUrlUseCase, envRetriever)
+&nbsp;    val mainUser: User = User.create(&quot;main&quot;, listOf(bsky))
+&nbsp;
+&nbsp;    // Publish user creation events
+&nbsp;    if (mainUser.hasUncommittedEvents()) {
+&nbsp;        mainUser.getUncommittedEvents().forEach { event -&gt;
+&nbsp;            eventPublisher.publish(event)
+&nbsp;        }
+&nbsp;        mainUser.markEventsAsCommitted()
+&nbsp;    }
+&nbsp;
+&nbsp;    platformRepository.save(bsky)
+&nbsp;    val publishParameters: PublishParameters =
+&nbsp;        PublishParameters.createDefault().copy(title = &quot;Und sogar bis zu 4 Bilder klappen!&quot;)
+&nbsp;
+&nbsp;    val distribution = Distribution.create(
+&nbsp;        content = textContent,
+&nbsp;        publishParameters = publishParameters,
+&nbsp;        platforms = mainUser.platforms
+&nbsp;    )
+&nbsp;
+&nbsp;    val imageDistribution = Distribution.create(
+&nbsp;        content = imageContent,
+&nbsp;        publishParameters = publishParameters,
+&nbsp;        platforms = listOf(bsky)
+&nbsp;    )
+&nbsp;
+&nbsp;    // Add shutdown hook to properly close the file logger session
+&nbsp;    Runtime.getRuntime().addShutdownHook(Thread {
+&nbsp;        fileLogger.closeSession()
+&nbsp;    })
+&nbsp;
+&nbsp;    server.start()
+&nbsp;    executeDistributionUseCase.execute(distribution)
+&nbsp;
+&nbsp;    Scanner(System.`in`).nextLine()
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-05-29 13:25</div>
+</div>
+</body>
+</html>

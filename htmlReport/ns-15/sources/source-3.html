@@ -1,0 +1,463 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > TwitterPlatform</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">de.busesteinkamp.plugins.platform</a>
+</div>
+
+<h1>Coverage Summary for Class: TwitterPlatform (de.busesteinkamp.plugins.platform)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">TwitterPlatform</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/19)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/26)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/110)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">TwitterPlatform$authorize$2</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/5)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">TwitterPlatform$exchangeCodeForShortLivedToken$1</td>
+  </tr>
+  <tr>
+    <td class="name">TwitterPlatform$handleNewMedia$1</td>
+  </tr>
+  <tr>
+    <td class="name">TwitterPlatform$handleTextUpload$1</td>
+  </tr>
+  <tr>
+    <td class="name">TwitterPlatform$receiveAuthKey$1</td>
+  </tr>
+  <tr>
+    <td class="name">TwitterPlatform$refreshAccessToken$1</td>
+  </tr>
+  <tr>
+    <td class="name">TwitterPlatform$testKeyAndReauthorize$1</td>
+  </tr>
+  <tr>
+    <td class="name">TwitterPlatform$upload$2</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">TwitterPlatform$WhenMappings</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/21)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/26)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/116)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package de.busesteinkamp.plugins.platform
+&nbsp;
+&nbsp;import de.busesteinkamp.adapters.content.TextContent
+&nbsp;import de.busesteinkamp.application.process.OpenUrlUseCase
+&nbsp;import de.busesteinkamp.domain.auth.AuthKey
+&nbsp;import de.busesteinkamp.domain.auth.AuthKeyRepository
+&nbsp;import de.busesteinkamp.domain.auth.EnvRetriever
+&nbsp;import de.busesteinkamp.domain.content.Content
+&nbsp;import de.busesteinkamp.domain.content.ContentType
+&nbsp;import de.busesteinkamp.domain.platform.PublishParameters
+&nbsp;import de.busesteinkamp.domain.platform.SocialMediaPlatform
+&nbsp;import de.busesteinkamp.domain.process.UploadStatus
+&nbsp;import de.busesteinkamp.domain.server.Server
+&nbsp;import de.busesteinkamp.plugins.data.LongLivedAccessTokenResponse
+&nbsp;import de.busesteinkamp.plugins.data.ShortLivedAccessTokenResponse
+&nbsp;import de.busesteinkamp.plugins.data.TwitterApiTweetResponse
+&nbsp;import de.busesteinkamp.plugins.server.TwitterServerPlugin
+&nbsp;import io.ktor.client.*
+&nbsp;import io.ktor.client.call.*
+&nbsp;import io.ktor.client.engine.cio.*
+&nbsp;import io.ktor.client.plugins.contentnegotiation.*
+&nbsp;import io.ktor.client.request.*
+&nbsp;import io.ktor.client.request.forms.*
+&nbsp;import io.ktor.http.*
+&nbsp;import io.ktor.serialization.kotlinx.json.*
+&nbsp;import kotlinx.coroutines.CoroutineScope
+&nbsp;import kotlinx.coroutines.Dispatchers
+&nbsp;import kotlinx.coroutines.launch
+&nbsp;import kotlinx.coroutines.withContext
+&nbsp;import kotlinx.serialization.json.Json
+&nbsp;import java.security.MessageDigest
+&nbsp;import java.util.*
+<b class="nc">&nbsp;</b>
+&nbsp;class TwitterPlatform(
+&nbsp;    id: UUID?,
+&nbsp;    name: String,
+<b class="nc">&nbsp;    private val server: Server,</b>
+<b class="nc">&nbsp;    private val authKeyRepository: AuthKeyRepository,</b>
+<b class="nc">&nbsp;    private val openUrlUseCase: OpenUrlUseCase,</b>
+<b class="nc">&nbsp;    private val envRetriever: EnvRetriever</b>
+<b class="nc">&nbsp;) : SocialMediaPlatform(id, name) {</b>
+&nbsp;
+&nbsp;    private var authorized = false
+&nbsp;
+&nbsp;    private val client: HttpClient = HttpClient(CIO) {
+<b class="nc">&nbsp;        install(ContentNegotiation) {</b>
+<b class="nc">&nbsp;            json(Json {</b>
+&nbsp;                ignoreUnknownKeys = true
+<b class="nc">&nbsp;                isLenient = true</b>
+&nbsp;            })
+<b class="nc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private val authPath = &quot;/auth/twitter&quot;
+&nbsp;    private val authAddress = server.getAddress() + authPath
+&nbsp;
+&nbsp;    private val codeVerifier = generateCodeVerifier()
+&nbsp;
+<b class="nc">&nbsp;    private val twitterServerPlugin = TwitterServerPlugin(this, authPath)</b>
+&nbsp;
+&nbsp;    private val clientId: String
+&nbsp;    private val clientSecret: String
+<b class="nc">&nbsp;</b>
+<b class="nc">&nbsp;    private lateinit var apiKey: String</b>
+<b class="nc">&nbsp;    private lateinit var refreshToken: String</b>
+&nbsp;
+<b class="nc">&nbsp;    private val mediaQueue: Queue&lt;Pair&lt;Content, PublishParameters&gt;&gt; = LinkedList()</b>
+<b class="nc">&nbsp;</b>
+&nbsp;    private var uploadInProgress = false
+<b class="nc">&nbsp;</b>
+&nbsp;    init {
+&nbsp;        clientId = envRetriever.getEnvVariable(&quot;X_API_CLIENT_ID&quot;)
+<b class="nc">&nbsp;        clientSecret = envRetriever.getEnvVariable(&quot;X_API_CLIENT_SECRET&quot;)</b>
+<b class="nc">&nbsp;</b>
+<b class="nc">&nbsp;        if (clientId == &quot;&quot; || clientSecret == &quot;&quot;) {</b>
+&nbsp;            throw IllegalStateException(&quot;API key or secret not found in .env file&quot;)
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="nc">&nbsp;    override fun upload(content: Content, publishParameters: PublishParameters, callback: ((UploadStatus) -&gt; Unit)?) {</b>
+&nbsp;        mediaQueue.add(Pair(content, publishParameters))
+&nbsp;        CoroutineScope(Dispatchers.IO).launch {
+<b class="nc">&nbsp;            testKeyAndReauthorize(key = authKeyRepository.find(name), callback = suspend {</b>
+<b class="nc">&nbsp;                callback?.invoke(UploadStatus.PENDING)</b>
+&nbsp;                handleNewMedia()
+&nbsp;            })
+&nbsp;            callback?.invoke(UploadStatus.FINISHED)
+<b class="nc">&nbsp;        }</b>
+<b class="nc">&nbsp;    }</b>
+<b class="nc">&nbsp;</b>
+<b class="nc">&nbsp;    private suspend fun handleNewMedia() {</b>
+<b class="nc">&nbsp;        if (uploadInProgress) {</b>
+<b class="nc">&nbsp;            return</b>
+&nbsp;        }
+&nbsp;        if (mediaQueue.isEmpty()) {
+<b class="nc">&nbsp;            println(&quot;No media to upload&quot;)</b>
+&nbsp;            return
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        uploadInProgress = true</b>
+<b class="nc">&nbsp;        while (mediaQueue.isNotEmpty()) {</b>
+&nbsp;            val (content, publishParameters) = mediaQueue.poll()
+<b class="nc">&nbsp;            when (content.contentType) {</b>
+<b class="nc">&nbsp;                ContentType.TEXT_PLAIN -&gt; handleTextUpload(content, publishParameters)</b>
+<b class="nc">&nbsp;                else -&gt; throw IllegalArgumentException(&quot;Unsupported media type&quot;)</b>
+<b class="nc">&nbsp;            }</b>
+&nbsp;        }
+<b class="nc">&nbsp;        uploadInProgress = false</b>
+<b class="nc">&nbsp;    }</b>
+&nbsp;
+<b class="nc">&nbsp;    private suspend fun handleTextUpload(content: Content, publishParameters: PublishParameters) {</b>
+<b class="nc">&nbsp;        val textFile = content as TextContent</b>
+&nbsp;        val url = &quot;https://api.twitter.com/2/tweets&quot;
+&nbsp;
+<b class="nc">&nbsp;        val response = client.post(url) {</b>
+<b class="nc">&nbsp;            headers {</b>
+&nbsp;                append(HttpHeaders.Authorization, &quot;Bearer $apiKey&quot;)
+&nbsp;                append(HttpHeaders.ContentType, io.ktor.http.ContentType.Application.Json)
+&nbsp;            }
+<b class="nc">&nbsp;            setBody(&quot;{\&quot;text\&quot;: \&quot;${textFile.get()}\&quot;}&quot;)</b>
+&nbsp;        }
+<b class="nc">&nbsp;</b>
+<b class="nc">&nbsp;        if (response.status != HttpStatusCode.Created) {</b>
+<b class="nc">&nbsp;            throw IllegalStateException(&quot;Error uploading text file to Twitter. Server responded with status ${response.status}&quot;)</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        val res: TwitterApiTweetResponse = response.body()
+<b class="nc">&nbsp;        println(&quot;Uploaded text file to Twitter. Tweet ID: ${res.data.id}&quot;)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private suspend fun testKeyAndReauthorize(key: AuthKey?, callback: suspend () -&gt; Unit) {
+&nbsp;        if (key != null) {
+<b class="nc">&nbsp;            // todo: check if key is working</b>
+<b class="nc">&nbsp;            if (key.expiresAt &lt; Date()) {</b>
+<b class="nc">&nbsp;                authKeyRepository.delete(name)</b>
+&nbsp;                authorize()
+&nbsp;                return
+<b class="nc">&nbsp;            }</b>
+<b class="nc">&nbsp;        } else {</b>
+<b class="nc">&nbsp;            authorize()</b>
+&nbsp;            return
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        // If key is older than 24 hours, refresh it</b>
+<b class="nc">&nbsp;        if (key.createdAt.time &lt; Date().time - 1000 * 60 * 60 * 24) {</b>
+<b class="nc">&nbsp;            val refreshedKey = refreshAccessToken(key.key)</b>
+<b class="nc">&nbsp;            authKeyRepository.update(refreshedKey)</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        this.apiKey = key.key.split(&quot;:&quot;)[0]</b>
+<b class="nc">&nbsp;        this.authorized = true</b>
+&nbsp;        callback()
+<b class="nc">&nbsp;    }</b>
+<b class="nc">&nbsp;</b>
+&nbsp;    private suspend fun authorize() {
+<b class="nc">&nbsp;        this.authorized = false</b>
+<b class="nc">&nbsp;        server.registerPlugin(twitterServerPlugin)</b>
+&nbsp;        if (!server.isRunning()) {
+&nbsp;            server.start()
+<b class="nc">&nbsp;        }</b>
+<b class="nc">&nbsp;</b>
+&nbsp;        val stateString = UUID.randomUUID().toString()
+&nbsp;        val codeChallenge = generateCodeChallenge(codeVerifier)
+&nbsp;
+&nbsp;        withContext(Dispatchers.IO) {
+&nbsp;            openUrlUseCase.execute(
+&nbsp;                &quot;https://twitter.com/i/oauth2/authorize&quot; +
+<b class="nc">&nbsp;                        &quot;?client_id=$clientId&quot; +</b>
+<b class="nc">&nbsp;                        &quot;&amp;redirect_uri=$authAddress&quot; +</b>
+<b class="nc">&nbsp;                        &quot;&amp;scope=tweet.read%20tweet.write%20offline.access%20users.read&quot; +</b>
+&nbsp;                        &quot;&amp;response_type=code&quot; +
+&nbsp;                        &quot;&amp;state=$stateString&quot; +
+&nbsp;                        &quot;&amp;code_challenge=$codeChallenge&quot; +
+<b class="nc">&nbsp;                        &quot;&amp;code_challenge_method=S256&quot;</b>
+<b class="nc">&nbsp;            )</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="nc">&nbsp;    private fun generateCodeVerifier(): String {</b>
+&nbsp;        val bytes = ByteArray(32)
+<b class="nc">&nbsp;        Random().nextBytes(bytes)</b>
+&nbsp;        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)
+<b class="nc">&nbsp;    }</b>
+<b class="nc">&nbsp;</b>
+<b class="nc">&nbsp;    private fun generateCodeChallenge(verifier: String): String {</b>
+<b class="nc">&nbsp;        val bytes = MessageDigest.getInstance(&quot;SHA-256&quot;).digest(verifier.toByteArray())</b>
+<b class="nc">&nbsp;        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    suspend fun receiveAuthKey(authKey: String) {
+&nbsp;        println(&quot;Received auth key: $authKey&quot;) // Totally safe and data compliant
+<b class="nc">&nbsp;</b>
+<b class="nc">&nbsp;        val shortLivedToken = exchangeCodeForShortLivedToken(authKey)</b>
+&nbsp;
+<b class="nc">&nbsp;        authKeyRepository.save(shortLivedToken)</b>
+<b class="nc">&nbsp;        this.apiKey = shortLivedToken.key.split(&quot;:&quot;)[0]</b>
+<b class="nc">&nbsp;        this.authorized = true</b>
+&nbsp;        handleNewMedia()
+<b class="nc">&nbsp;        server.unregisterPlugin(twitterServerPlugin)</b>
+<b class="nc">&nbsp;    }</b>
+<b class="nc">&nbsp;</b>
+<b class="nc">&nbsp;</b>
+<b class="nc">&nbsp;    private suspend fun exchangeCodeForShortLivedToken(code: String): AuthKey {</b>
+<b class="nc">&nbsp;        val credentials = &quot;$clientId:$clientSecret&quot;</b>
+<b class="nc">&nbsp;        val base64Credentials = Base64.getEncoder().encodeToString(credentials.toByteArray())</b>
+&nbsp;
+<b class="nc">&nbsp;        val response = client.post(&quot;https://api.twitter.com/2/oauth2/token&quot;) {</b>
+<b class="nc">&nbsp;            headers {</b>
+&nbsp;                append(HttpHeaders.Authorization, &quot;Basic $base64Credentials&quot;)
+&nbsp;            }
+<b class="nc">&nbsp;            setBody(FormDataContent(Parameters.build {</b>
+<b class="nc">&nbsp;                append(&quot;code&quot;, code)</b>
+<b class="nc">&nbsp;                append(&quot;grant_type&quot;, &quot;authorization_code&quot;)</b>
+&nbsp;                append(&quot;redirect_uri&quot;, authAddress)
+&nbsp;                append(&quot;code_verifier&quot;, codeVerifier)
+&nbsp;            }))
+<b class="nc">&nbsp;        }</b>
+<b class="nc">&nbsp;</b>
+&nbsp;        if (response.status != HttpStatusCode.OK) {
+<b class="nc">&nbsp;            throw IllegalStateException(&quot;Error exchanging code for short lived token. Server responded with status ${response.status}&quot;)</b>
+<b class="nc">&nbsp;        }</b>
+<b class="nc">&nbsp;</b>
+<b class="nc">&nbsp;        val accessTokenResponse: ShortLivedAccessTokenResponse = response.body()</b>
+&nbsp;        println(&quot;Received short lived access token: ${accessTokenResponse.access_token}&quot;)
+<b class="nc">&nbsp;        return AuthKey(</b>
+<b class="nc">&nbsp;            name,</b>
+<b class="nc">&nbsp;            encodeToken(accessTokenResponse.access_token, accessTokenResponse.refresh_token),</b>
+<b class="nc">&nbsp;            Date(),</b>
+<b class="nc">&nbsp;            Date(Date().time + accessTokenResponse.expires_in * 1000)</b>
+<b class="nc">&nbsp;        )</b>
+<b class="nc">&nbsp;    }</b>
+&nbsp;
+<b class="nc">&nbsp;    private suspend fun refreshAccessToken(refreshToken: String): AuthKey {</b>
+<b class="nc">&nbsp;        val credentials = &quot;$clientId:$clientSecret&quot;</b>
+&nbsp;        val base64Credentials = Base64.getEncoder().encodeToString(credentials.toByteArray())
+&nbsp;
+<b class="nc">&nbsp;        val response = client.post(&quot;https://api.twitter.com/2/oauth2/token&quot;) {</b>
+<b class="nc">&nbsp;            headers {</b>
+<b class="nc">&nbsp;                append(HttpHeaders.Authorization, &quot;Basic $base64Credentials&quot;)</b>
+<b class="nc">&nbsp;                append(HttpHeaders.ContentType, io.ktor.http.ContentType.Application.FormUrlEncoded.toString())</b>
+&nbsp;            }
+&nbsp;            setBody(FormDataContent(Parameters.build {
+&nbsp;                append(&quot;client_id&quot;, clientId)
+<b class="nc">&nbsp;                append(&quot;client_secret&quot;, clientSecret)</b>
+&nbsp;                append(&quot;refresh_token&quot;, refreshToken)
+&nbsp;                append(&quot;grant_type&quot;, &quot;refresh_token&quot;)
+&nbsp;            }))
+<b class="nc">&nbsp;        }</b>
+<b class="nc">&nbsp;</b>
+&nbsp;        if (response.status != HttpStatusCode.OK) {
+&nbsp;            throw IllegalStateException(&quot;Error refreshing access token. Server responded with status ${response.status}&quot;)
+&nbsp;        }
+&nbsp;
+&nbsp;        val accessTokenResponse: LongLivedAccessTokenResponse = response.body()
+&nbsp;        println(&quot;Received long lived access token: ${accessTokenResponse.access_token}&quot;)
+&nbsp;        val authKey = AuthKey(
+&nbsp;            name,
+&nbsp;            accessTokenResponse.access_token,
+&nbsp;            Date(),
+&nbsp;            Date(Date().time + accessTokenResponse.expires_in * 1000)
+&nbsp;        )
+&nbsp;        return authKey
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun encodeToken(key: String, refresh: String): String {
+&nbsp;        return &quot;$key:$refresh&quot;
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun decodeToken(key: String): Pair&lt;String, String&gt; {
+&nbsp;        val split = key.split(&quot;:&quot;)
+&nbsp;        return Pair(split[0], split[1])
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-05-29 13:25</div>
+</div>
+</body>
+</html>

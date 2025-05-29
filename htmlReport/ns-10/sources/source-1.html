@@ -1,0 +1,180 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > GeminiClient</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">de.busesteinkamp.plugins.client</a>
+</div>
+
+<h1>Coverage Summary for Class: GeminiClient (de.busesteinkamp.plugins.client)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">GeminiClient</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/32)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">GeminiClient$sendMessage$1</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/32)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package de.busesteinkamp.plugins.client
+&nbsp;
+&nbsp;import de.busesteinkamp.domain.generator.GenAIService
+&nbsp;import de.busesteinkamp.plugins.data.*
+&nbsp;import io.github.cdimascio.dotenv.dotenv
+&nbsp;import io.ktor.client.*
+&nbsp;import io.ktor.client.call.*
+&nbsp;import io.ktor.client.plugins.contentnegotiation.*
+&nbsp;import io.ktor.client.request.*
+&nbsp;import io.ktor.serialization.kotlinx.json.*
+&nbsp;
+<b class="nc">&nbsp;class GeminiClient : GenAIService {</b>
+&nbsp;
+&nbsp;    private val apiKey: String
+&nbsp;    private val baseUrl: String
+&nbsp;
+<b class="nc">&nbsp;    init {</b>
+<b class="nc">&nbsp;        val dotenv = dotenv()</b>
+<b class="nc">&nbsp;        apiKey = dotenv[&quot;GEMINI_API_KEY&quot;]</b>
+<b class="nc">&nbsp;        baseUrl = dotenv[&quot;GEMINI_BASE_URL&quot;]</b>
+<b class="nc">&nbsp;    }</b>
+&nbsp;
+<b class="nc">&nbsp;    private val client = HttpClient {</b>
+<b class="nc">&nbsp;        install(ContentNegotiation) {</b>
+<b class="nc">&nbsp;            json()</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override suspend fun sendMessage(systemPrompt: String, userInput: String): String {
+<b class="nc">&nbsp;        val generationConfig = GenerationConfig(</b>
+<b class="nc">&nbsp;            temperature = 1f,</b>
+<b class="nc">&nbsp;            topK = 64,</b>
+<b class="nc">&nbsp;            topP = 0.95f,</b>
+<b class="nc">&nbsp;            maxOutputTokens = 8192,</b>
+<b class="nc">&nbsp;            responseMimeType = &quot;application/json&quot;</b>
+&nbsp;        )
+&nbsp;
+<b class="nc">&nbsp;        val body = RequestContent(</b>
+<b class="nc">&nbsp;            generation_config = generationConfig,</b>
+<b class="nc">&nbsp;            system_instruction = SystemInstruct(parts = Part(text = systemPrompt)),</b>
+<b class="nc">&nbsp;            contents = listOf(</b>
+<b class="nc">&nbsp;                Contents(</b>
+<b class="nc">&nbsp;                    role = &quot;user&quot;,</b>
+<b class="nc">&nbsp;                    parts = listOf(Part(text = userInput))</b>
+&nbsp;                )
+&nbsp;            )
+&nbsp;        )
+&nbsp;
+<b class="nc">&nbsp;        val response = client.post(baseUrl) {</b>
+<b class="nc">&nbsp;            headers {</b>
+<b class="nc">&nbsp;                append(&quot;Content-Type&quot;, &quot;application/json&quot;)</b>
+<b class="nc">&nbsp;                append(&quot;x-goog-api-key&quot;, apiKey)</b>
+&nbsp;            }
+<b class="nc">&nbsp;            setBody(body)</b>
+<b class="nc">&nbsp;        }</b>
+&nbsp;
+<b class="nc">&nbsp;        val res = response.body&lt;GeminiResponse&gt;()</b>
+<b class="nc">&nbsp;        val rawResponse = res.candidates[0].content.parts[0].text</b>
+<b class="nc">&nbsp;        val cleanedResponse = cleanResponse(rawResponse)</b>
+<b class="nc">&nbsp;        return cleanedResponse</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;private fun cleanResponse(response: String): String {
+&nbsp;    return response.replace(Regex(&quot;[\\[\\]\\n\&quot;]&quot;), &quot;&quot;).trim()
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-05-29 13:25</div>
+</div>
+</body>
+</html>

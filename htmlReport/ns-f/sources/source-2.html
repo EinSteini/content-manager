@@ -1,0 +1,206 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > SqliteAuthKeyRepository</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">de.busesteinkamp.plugins.auth</a>
+</div>
+
+<h1>Coverage Summary for Class: SqliteAuthKeyRepository (de.busesteinkamp.plugins.auth)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">SqliteAuthKeyRepository</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/51)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package de.busesteinkamp.plugins.auth
+&nbsp;
+&nbsp;import de.busesteinkamp.domain.auth.AuthKey
+&nbsp;import de.busesteinkamp.domain.auth.AuthKeyRepository
+&nbsp;import java.sql.Connection
+&nbsp;import java.sql.DriverManager
+&nbsp;import java.sql.SQLException
+&nbsp;import java.text.SimpleDateFormat
+&nbsp;import java.util.*
+&nbsp;
+<b class="nc">&nbsp;class SqliteAuthKeyRepository : AuthKeyRepository {</b>
+<b class="nc">&nbsp;    private val url = &quot;jdbc:sqlite:auth_keys.db&quot;</b>
+&nbsp;
+<b class="nc">&nbsp;    init {</b>
+<b class="nc">&nbsp;        createTableIfNotExists()</b>
+<b class="nc">&nbsp;    }</b>
+&nbsp;
+&nbsp;    private fun createTableIfNotExists() {
+<b class="nc">&nbsp;          DriverManager.getConnection(url).use { connection -&gt;</b>
+<b class="nc">&nbsp;              connection.createStatement().use { statement -&gt;</b>
+<b class="nc">&nbsp;                  statement.executeUpdate(</b>
+<b class="nc">&nbsp;                      &quot;CREATE TABLE IF NOT EXISTS auth_keys (platformName TEXT PRIMARY KEY, authKey TEXT, createdAt TEXT, expiresAt TEXT)&quot;</b>
+<b class="nc">&nbsp;                  )</b>
+<b class="nc">&nbsp;              }</b>
+&nbsp;          }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun find(platformName: String): AuthKey? {
+<b class="nc">&nbsp;        val sql = &quot;SELECT authKey, createdAt, expiresAt FROM auth_keys WHERE platformName = ?&quot;</b>
+<b class="nc">&nbsp;        DriverManager.getConnection(url).use { connection -&gt;</b>
+<b class="nc">&nbsp;            connection.prepareStatement(sql).use { preparedStatement -&gt;</b>
+<b class="nc">&nbsp;                preparedStatement.setString(1, platformName)</b>
+<b class="nc">&nbsp;                val resultSet = preparedStatement.executeQuery()</b>
+<b class="nc">&nbsp;                return if (resultSet.next()) {</b>
+<b class="nc">&nbsp;                    AuthKey(</b>
+<b class="nc">&nbsp;                        platformName,</b>
+<b class="nc">&nbsp;                        resultSet.getString(&quot;authKey&quot;),</b>
+<b class="nc">&nbsp;                        Date(resultSet.getLong(&quot;createdAt&quot;)),</b>
+<b class="nc">&nbsp;                        Date(resultSet.getLong(&quot;expiresAt&quot;))</b>
+&nbsp;                    )
+&nbsp;                } else {
+<b class="nc">&nbsp;                    null</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun save(authKey: AuthKey): AuthKey {
+<b class="nc">&nbsp;        val sql = &quot;INSERT INTO auth_keys (platformName, authKey, createdAt, expiresAt) VALUES (?, ?, ?, ?)&quot;</b>
+<b class="nc">&nbsp;        DriverManager.getConnection(url).use { connection -&gt;</b>
+<b class="nc">&nbsp;            connection.prepareStatement(sql).use { preparedStatement -&gt;</b>
+<b class="nc">&nbsp;                preparedStatement.setString(1, authKey.platformName)</b>
+<b class="nc">&nbsp;                preparedStatement.setString(2, authKey.key)</b>
+<b class="nc">&nbsp;                preparedStatement.setDate(3, java.sql.Date(authKey.createdAt.time))</b>
+<b class="nc">&nbsp;                preparedStatement.setDate(4, java.sql.Date(authKey.expiresAt.time))</b>
+<b class="nc">&nbsp;                preparedStatement.executeUpdate()</b>
+<b class="nc">&nbsp;            }</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return authKey</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun update(authKey: AuthKey): AuthKey {
+<b class="nc">&nbsp;        val sql = &quot;UPDATE auth_keys SET authKey = ?, createdAt = ?, expiresAt = ? WHERE platformName = ?&quot;</b>
+<b class="nc">&nbsp;        DriverManager.getConnection(url).use { connection -&gt;</b>
+<b class="nc">&nbsp;            connection.prepareStatement(sql).use { preparedStatement -&gt;</b>
+<b class="nc">&nbsp;                preparedStatement.setString(1, authKey.key)</b>
+<b class="nc">&nbsp;                preparedStatement.setDate(2, java.sql.Date(authKey.createdAt.time))</b>
+<b class="nc">&nbsp;                preparedStatement.setDate(3, java.sql.Date(authKey.expiresAt.time))</b>
+<b class="nc">&nbsp;                preparedStatement.setString(4, authKey.platformName)</b>
+<b class="nc">&nbsp;                preparedStatement.executeUpdate()</b>
+<b class="nc">&nbsp;            }</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return authKey</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun delete(platformName: String) {
+<b class="nc">&nbsp;        val sql = &quot;DELETE FROM auth_keys WHERE platformName = ?&quot;</b>
+<b class="nc">&nbsp;        DriverManager.getConnection(url).use { connection -&gt;</b>
+<b class="nc">&nbsp;            connection.prepareStatement(sql).use { preparedStatement -&gt;</b>
+<b class="nc">&nbsp;                preparedStatement.setString(1, platformName)</b>
+<b class="nc">&nbsp;                preparedStatement.executeUpdate()</b>
+<b class="nc">&nbsp;            }</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun parseDate(dateString: String): Date {
+<b class="nc">&nbsp;        val dateFormat = SimpleDateFormat(&quot;EEE MMM dd HH:mm:ss zzz yyyy&quot;, Locale.ENGLISH)</b>
+<b class="nc">&nbsp;        return dateFormat.parse(dateString)</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-05-29 13:25</div>
+</div>
+</body>
+</html>
