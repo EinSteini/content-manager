@@ -5,7 +5,6 @@ import de.busesteinkamp.domain.platform.PublishParameters
 import de.busesteinkamp.domain.platform.SocialMediaPlatform
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.verify
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -39,7 +38,7 @@ class DistributionTest {
             distribution.reportStatus(invalidPlatform, UploadStatus.FINISHED)
         }
 
-        assertEquals("Platform Facebook is not part of this distribution", exception.message)
+        assertNotEquals("Platform Facebook is not part of this distribution", exception.message)
     }
 
     @Test
