@@ -23,16 +23,100 @@ jobs:
       - name: Grant execute permission for Gradle wrapper
         run: chmod +x ./gradlew
 
-      - name: Run all tests with details
-        run: ./gradlew test --continue
+      - name: Run all tests with detailed output
+        run: |
+          ./gradlew test --continue --info --stacktrace
+        continue-on-error: true
 
-      - name: Upload all test reports
+      - name: Display test results summary
+        if: always()
+        run: |
+          echo "=========================================="
+          echo "           TEST RESULTS SUMMARY          "
+          echo "=========================================="
+          
+          # Find all test result XML files
+          find . -name "TEST-*.xml" -path "*/build/test-results/test/*" | while read file; do
+            if [ -f "$file" ]; then
+              module=$(echo "$file" | sed 's|.*/\([^/]*\)/build/test-results/test/.*|\1|')
+              echo ""
+              echo "📊 Module: $module"
+              echo "----------------------------------------"
+              
+              # Extract test statistics from XML
+              tests=$(grep -o 'tests="[0-9]*"' "$file" | sed 's/tests="\([0-9]*\)"/\1/')
+              failures=$(grep -o 'failures="[0-9]*"' "$file" | sed 's/failures="\([0-9]*\)"/\1/')
+              errors=$(grep -o 'errors="[0-9]*"' "$file" | sed 's/errors="\([0-9]*\)"/\1/')
+              skipped=$(grep -o 'skipped="[0-9]*"' "$file" | sed 's/skipped="\([0-9]*\)"/\1/')
+              
+              # Default to 0 if not found
+              tests=${tests:-0}
+              failures=${failures:-0}
+              errors=${errors:-0}
+              skipped=${skipped:-0}
+              
+              passed=$((tests - failures - errors - skipped))
+              
+              echo "✅ Passed: $passed"
+              echo "❌ Failed: $failures"
+              echo "🚨 Errors: $errors"
+              echo "⏭️  Skipped: $skipped"
+              echo "📈 Total: $tests"
+              
+              # Show failed tests details
+              if [ $failures -gt 0 ] || [ $errors -gt 0 ]; then
+                echo ""
+                echo "🔍 Failed Test Details:"
+                grep -A 10 '<failure\|<error' "$file" | sed 's/<[^>]*>//g' | sed '/^$/d' | head -20
+              fi
+            fi
+          done
+          
+          echo ""
+          echo "=========================================="
+
+      - name: Check for test failures
+        if: always()
+        run: |
+          # Count total failures and errors
+          total_failures=0
+          total_errors=0
+          
+          find . -name "TEST-*.xml" -path "*/build/test-results/test/*" | while read file; do
+            if [ -f "$file" ]; then
+              failures=$(grep -o 'failures="[0-9]*"' "$file" | sed 's/failures="\([0-9]*\)"/\1/')
+              errors=$(grep -o 'errors="[0-9]*"' "$file" | sed 's/errors="\([0-9]*\)"/\1/')
+              failures=${failures:-0}
+              errors=${errors:-0}
+              total_failures=$((total_failures + failures))
+              total_errors=$((total_errors + errors))
+            fi
+          done
+          
+          if [ $total_failures -gt 0 ] || [ $total_errors -gt 0 ]; then
+            echo "❌ Tests failed! Please check the details above."
+            exit 1
+          else
+            echo "✅ All tests passed successfully!"
+          fi
+
+      - name: Upload test reports (on failure)
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: all-test-reports
+          name: test-reports-$(date +%Y%m%d-%H%M%S)
           path: |
             domain/build/reports/tests/test
             application/build/reports/tests/test
-            adapter/build/reports/tests/test
-            plugin/**/build/reports/tests/test
+            adapters/build/reports/tests/test
+            plugins/**/build/reports/tests/test
+          retention-days: 7
+
+      - name: Upload test results XML (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-xml-$(date +%Y%m%d-%H%M%S)
+          path: |
+            **/build/test-results/test/*.xml
+          retention-days: 7
