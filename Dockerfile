@@ -11,7 +11,7 @@ COPY adapters/src/ adapters/src/
 COPY adapters/build.gradle.kts adapters/
 COPY plugins/ plugins/
 
-RUN gradle clean :plugins:main_plugin:shadowJar \
+RUN gradle clean :main:main_plugin:shadowJar \
     --no-daemon \
     --warning-mode all \
     -Porg.gradle.java.installations.auto-download=true \
