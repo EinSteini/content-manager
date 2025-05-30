@@ -1,4 +1,4 @@
-package de.busesteinkamp
+package de.busesteinkamp.main
 
 import SystemEnvPlugin
 import de.busesteinkamp.application.process.ExecuteDistributionUseCase

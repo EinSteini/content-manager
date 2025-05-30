@@ -12,6 +12,7 @@
             <option value="$PROJECT_DIR$/adapters" />
             <option value="$PROJECT_DIR$/application" />
             <option value="$PROJECT_DIR$/domain" />
+            <option value="$PROJECT_DIR$/main" />
             <option value="$PROJECT_DIR$/plugins" />
             <option value="$PROJECT_DIR$/plugins/bluesky_plugin" />
             <option value="$PROJECT_DIR$/plugins/browser_plugin" />
@@ -21,7 +22,6 @@
             <option value="$PROJECT_DIR$/plugins/inmemory_plugin" />
             <option value="$PROJECT_DIR$/plugins/jpa_plugin" />
             <option value="$PROJECT_DIR$/plugins/ktor_server_plugin" />
-            <option value="$PROJECT_DIR$/plugins/main_plugin" />
             <option value="$PROJECT_DIR$/plugins/sqlite_authkey_storage_plugin" />
             <option value="$PROJECT_DIR$/plugins/systemenv_plugin" />
             <option value="$PROJECT_DIR$/plugins/textfile_logging_plugin" />

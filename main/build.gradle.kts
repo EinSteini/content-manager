@@ -38,7 +38,7 @@ tasks.test {
 tasks.shadowJar {
     manifest {
         attributes(
-            "Main-Class" to "de.busesteinkamp.MainKt"
+            "Main-Class" to "de.busesteinkamp.main.MainKt"
         )
     }
     archiveClassifier.set("")
