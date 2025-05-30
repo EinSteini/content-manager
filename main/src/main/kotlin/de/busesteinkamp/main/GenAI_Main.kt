@@ -40,12 +40,12 @@ fun main(): Unit = runBlocking {
     val server: Server = KtorServer(8443)
     val authKeyRepository: AuthKeyRepository = SqliteAuthKeyRepository()
 
-    val genAIService: GenAIService = GeminiClient()
+    val envRetriever = DotenvPlugin()
+    val genAIService: GenAIService = GeminiClient(envRetriever)
     val textPostGenerator: Generator = TextPostGenerator(genAIService = genAIService)
     val generateTextContentUseCase = GenerateTextContentUseCase(textPostGenerator)
 
     val openUrlUseCase = OpenUrlUseCase(false, DesktopBrowserOpener())
-    val dotenv = DotenvPlugin()
 
     val textContent = generateTextContentUseCase.execute(
         input = "Programmierung"
@@ -55,7 +55,7 @@ fun main(): Unit = runBlocking {
     println(content.get())
 
     val threads: SocialMediaPlatform =
-        ThreadsPlatform(UUID.randomUUID(), "Threads", server, authKeyRepository, openUrlUseCase, dotenv)
+        ThreadsPlatform(UUID.randomUUID(), "Threads", server, authKeyRepository, openUrlUseCase, envRetriever)
     val mainUser = User.create("main", listOf(threads))
 
     // Publish user creation events

@@ -28,11 +28,13 @@ import de.busesteinkamp.plugins.platform.ThreadsPlatform
 import de.busesteinkamp.plugins.platform.TwitterPlatform
 import de.busesteinkamp.plugins.process.InMemoryDistributionRepository
 import de.busesteinkamp.plugins.server.KtorServer
+import de.busesteinkamp.plugins.systemenv.SystemEnvPlugin
 import de.busesteinkamp.plugins.user.InMemoryUserRepository
 import de.busesteinkamp.plugins.utility.DesktopBrowserOpener
 import kotlinx.coroutines.*
 import java.io.File
 import java.util.*
+import kotlin.system.exitProcess
 
 /**
  * ANSI escape codes for terminal colors and styles.
@@ -54,6 +56,7 @@ object TerminalColors {
  */
 class TerminalMain {
     private val fileLogger = TextFileEventLogger()
+    private val envRetriever = SystemEnvPlugin()
     private val eventPublisher: DomainEventPublisher = fileLogger
     private val platformRepository: SocialMediaPlatformRepository = InMemorySocialMediaPlatformRepository()
     private val userRepository: UserRepository = InMemoryUserRepository()
@@ -61,11 +64,10 @@ class TerminalMain {
     private val executeDistributionUseCase = ExecuteDistributionUseCase(distributionRepository, eventPublisher)
     private val server: Server = KtorServer(8443)
     private val authKeyRepository: AuthKeyRepository = SqliteAuthKeyRepository()
-    private val openUrlUseCase = OpenUrlUseCase(false, DesktopBrowserOpener())
-    private val genAIService: GenAIService = GeminiClient()
+    private val openUrlUseCase = OpenUrlUseCase(true, DesktopBrowserOpener())
+    private val genAIService: GenAIService = GeminiClient(envRetriever)
     private val textPostGenerator: Generator = TextPostGenerator(genAIService = genAIService)
     private val generateTextContentUseCase = GenerateTextContentUseCase(textPostGenerator)
-    private val envRetriever = DotenvPlugin()
 
     // List of available platform factories for creating platform instances
     private val availablePlatformFactories = listOf(
@@ -163,9 +165,15 @@ class TerminalMain {
      */
     fun start() = runBlocking {
         // Add shutdown hook to properly close the file logger session
-        Runtime.getRuntime().addShutdownHook(Thread {
-            fileLogger.closeSession()
-        })
+        val signals = listOf("INT", "TERM")
+        signals.forEach { signal ->
+            sun.misc.Signal.handle(sun.misc.Signal(signal)) { _ ->
+                println("\n${TerminalColors.GREEN}Shutting down...${TerminalColors.RESET}")
+                server.stop()
+                fileLogger.closeSession()
+                exitProcess(0)
+            }
+        }
 
         server.start()
         displayWelcome()

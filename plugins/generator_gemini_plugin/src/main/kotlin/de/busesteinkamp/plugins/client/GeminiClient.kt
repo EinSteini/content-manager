@@ -1,5 +1,6 @@
 package de.busesteinkamp.plugins.client
 
+import de.busesteinkamp.domain.auth.EnvRetriever
 import de.busesteinkamp.domain.generator.GenAIService
 import de.busesteinkamp.plugins.data.*
 import io.github.cdimascio.dotenv.dotenv
@@ -9,15 +10,14 @@ import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.serialization.kotlinx.json.*
 
-class GeminiClient : GenAIService {
+class GeminiClient(private val envRetriever: EnvRetriever) : GenAIService {
 
     private val apiKey: String
     private val baseUrl: String
 
     init {
-        val dotenv = dotenv()
-        apiKey = dotenv["GEMINI_API_KEY"]
-        baseUrl = dotenv["GEMINI_BASE_URL"]
+        apiKey = envRetriever.getEnvVariable("GEMINI_API_KEY")
+        baseUrl = envRetriever.getEnvVariable("GEMINI_BASE_URL")
     }
 
     private val client = HttpClient {
