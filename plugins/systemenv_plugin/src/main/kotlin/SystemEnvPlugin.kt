@@ -1,3 +1,5 @@
+package de.busesteinkamp.plugins.systemenv
+
 import de.busesteinkamp.domain.auth.EnvRetriever
 
 class SystemEnvPlugin : EnvRetriever {

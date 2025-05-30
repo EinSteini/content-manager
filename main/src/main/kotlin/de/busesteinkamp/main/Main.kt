@@ -1,6 +1,5 @@
 package de.busesteinkamp.main
 
-import SystemEnvPlugin
 import de.busesteinkamp.application.process.ExecuteDistributionUseCase
 import de.busesteinkamp.application.process.OpenUrlUseCase
 import de.busesteinkamp.domain.auth.AuthKeyRepository
@@ -15,6 +14,7 @@ import de.busesteinkamp.domain.process.DistributionRepository
 import de.busesteinkamp.domain.server.Server
 import de.busesteinkamp.domain.user.User
 import de.busesteinkamp.domain.user.UserRepository
+import de.busesteinkamp.plugins.auth.DotenvPlugin
 import de.busesteinkamp.plugins.auth.SqliteAuthKeyRepository
 import de.busesteinkamp.plugins.content.ContentFileReader
 import de.busesteinkamp.plugins.logging.TextFileEventLogger
@@ -40,7 +40,7 @@ fun main(args: Array<String>): Unit = runBlocking {
     val server: Server = KtorServer(8443)
     val authKeyRepository: AuthKeyRepository = SqliteAuthKeyRepository()
     val openUrlUseCase = OpenUrlUseCase(true, DesktopBrowserOpener())
-    val envRetriever = SystemEnvPlugin()
+    val envRetriever = DotenvPlugin()
 
     val examplePostPath = javaClass.getResource("/example_post.txt")?.path
     if (examplePostPath == null) {

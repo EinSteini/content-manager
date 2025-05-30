@@ -23,7 +23,7 @@ class DotenvPlugin : EnvRetriever {
         if (!initialized || dotenv == null) {
             throw IllegalStateException("DotenvPlugin not initialized. Check if .env file is present.")
         }
-        return dotenv!![key];
+        return dotenv!![key] ?: "";
     }
 
 }
